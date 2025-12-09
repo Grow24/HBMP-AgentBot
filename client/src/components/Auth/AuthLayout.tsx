@@ -64,7 +64,7 @@ function AuthLayout({
           <img
             src="assets/Icon_HBMP[1].png"
             className="h-full w-full object-contain"
-            alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'LibreChat' })}
+            alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'HBMP AgentBot' })}
           />
         </div>
       </BlinkAnimation>

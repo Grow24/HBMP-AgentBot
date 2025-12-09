@@ -1,6 +1,6 @@
 {
-  "name": "HBMP-Agent",
-  "short_name": "HBMP-Agent",
+  "name": "HBMP AgentBot",
+  "short_name": "HBMP AgentBot",
   "description": "AI Chat Interface with Multiple Models",
   "start_url": "/",
   "display": "standalone",
