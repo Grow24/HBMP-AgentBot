@@ -1,6 +1,6 @@
 {
-  "name": "LibreChat",
-  "short_name": "LibreChat",
+  "name": "Grow24.ai-Agent",
+  "short_name": "Grow24.ai-Agent",
   "description": "AI Chat Interface with Multiple Models",
   "start_url": "/",
   "display": "standalone",
@@ -21,7 +21,7 @@
       "purpose": "maskable"
     },
     {
-      "src": "/assets/apple-touch-icon-180x180.png",
+      "src": "/assets/",
       "sizes": "180x180",
       "type": "image/png"
     }
