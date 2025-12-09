@@ -1,6 +1,6 @@
 {
-  "name": "Grow24.ai-Agent",
-  "short_name": "Grow24.ai-Agent",
+  "name": "HBMP AgentBot",
+  "short_name": "HBMP AgentBot",
   "description": "AI Chat Interface with Multiple Models",
   "start_url": "/",
   "display": "standalone",
