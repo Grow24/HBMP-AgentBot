@@ -58,8 +58,8 @@ export default defineConfig(({ command }) => ({
       },
       includeAssets: [],
       manifest: {
-        name: 'HBMP AgentBot',
-        short_name: 'HBMP AgentBot',
+        name: 'LibreChat',
+        short_name: 'LibreChat',
         display: 'standalone',
         background_color: '#000000',
         theme_color: '#009688',

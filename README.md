@@ -1,4 +1,4 @@
-# HBMP AgentBot
+# Grow24.ai-Agent
 
 An advanced AI agent platform for intelligent automation and conversation management.
 
@@ -17,8 +17,8 @@ An advanced AI agent platform for intelligent automation and conversation manage
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/AbhinavJD7/HBMP-AgentBot.git
-   cd HBMP-AgentBot
+   git clone https://github.com/Grow24/Grow24.ai-Agent.git
+   cd Grow24.ai-Agent
    ```
 
 2. Install dependencies:
