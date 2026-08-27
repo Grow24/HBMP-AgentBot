@@ -43,10 +43,15 @@ COPY --chown=node:node . .
 ENV AGENTBOT_BASE=/
 ENV HOST=0.0.0.0
 
-# 3072 fits Zeabur 4GB builders; 8192 OOMs and used to continue via `;` so dist never landed in the image.
+# Change this to bust stale Zeabur layer cache.
+ARG HBMP_BUILD=2026-08-27-dist3
+# 3072 fits Zeabur 4GB builders; 8192 OOMs and used to continue via `;`.
 ENV NODE_OPTIONS=--max-old-space-size=3072
 
+# Do not npm prune: it drops workspace dist and leaves a broken
+# @librechat/data-schemas symlink (Zeabur crash-loop).
 RUN set -eux; \
+    echo "HBMP_BUILD=${HBMP_BUILD}"; \
     if [ -f librechat.yaml.example ] && [ ! -f librechat.yaml ]; then \
       cp librechat.yaml.example librechat.yaml; \
     fi; \
@@ -58,20 +63,15 @@ RUN set -eux; \
     test -f packages/data-provider/dist/index.js; \
     test -f packages/data-schemas/dist/index.cjs; \
     test -f packages/api/dist/index.js; \
-    mkdir -p /tmp/lc-dist; \
-    cp -a packages/data-provider/dist /tmp/lc-dist/data-provider; \
-    cp -a packages/data-schemas/dist /tmp/lc-dist/data-schemas; \
-    cp -a packages/api/dist /tmp/lc-dist/api; \
-    cp -a client/dist /tmp/lc-dist/client; \
-    npm prune --omit=dev; \
-    cp -a /tmp/lc-dist/data-provider packages/data-provider/dist; \
-    cp -a /tmp/lc-dist/data-schemas packages/data-schemas/dist; \
-    cp -a /tmp/lc-dist/api packages/api/dist; \
-    cp -a /tmp/lc-dist/client client/dist; \
     mkdir -p node_modules/@librechat; \
-    ln -sfn /app/packages/data-schemas node_modules/@librechat/data-schemas; \
-    ln -sfn /app/packages/api node_modules/@librechat/api; \
-    ln -sfn /app/packages/data-provider node_modules/librechat-data-provider; \
+    rm -rf node_modules/@librechat/data-schemas node_modules/@librechat/api node_modules/librechat-data-provider; \
+    mkdir -p node_modules/@librechat/data-schemas node_modules/@librechat/api node_modules/librechat-data-provider; \
+    cp -a packages/data-schemas/package.json node_modules/@librechat/data-schemas/; \
+    cp -a packages/data-schemas/dist node_modules/@librechat/data-schemas/dist; \
+    cp -a packages/api/package.json node_modules/@librechat/api/; \
+    cp -a packages/api/dist node_modules/@librechat/api/dist; \
+    cp -a packages/data-provider/package.json node_modules/librechat-data-provider/; \
+    cp -a packages/data-provider/dist node_modules/librechat-data-provider/dist; \
     test -f node_modules/@librechat/data-schemas/dist/index.cjs; \
     test -f node_modules/@librechat/api/dist/index.js; \
     npm cache clean --force

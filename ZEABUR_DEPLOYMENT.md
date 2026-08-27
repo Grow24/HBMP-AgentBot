@@ -107,7 +107,9 @@ Ya locally (same Mongo): `npm run create-user`
 
 - Dockerfile heap **3072 MB** hai taaki 4GB Zeabur plan pe OOM na ho
 - Build fail / OOM aaye to service RAM **8GB** karo, cache clear, redeploy
-- Image start pe `packages/*/dist` hona zaroori hai; missing `data-schemas/dist` se container crash-loop (502) hota hai
+- Settings → Dockerfile → **Load from GitHub** → Save. Dashboard me purana Dockerfile cache ho to `dist` missing rehta hai
+- Settings → Health Check port **3080** (Networking ke saath match)
+- Crash restart attempts: **-1**
 - Meilisearch optional hai (`SEARCH=false`)
 - `librechat.yaml` image start pe example se ban jati hai
 
@@ -118,6 +120,6 @@ Ya locally (same Mongo): `npm run create-user`
 - [ ] Unique `SESSION_SECRET`, `JWT_*`, `CREDS_KEY`, `CREDS_IV`
 - [ ] `GOOGLE_KEY` set
 - [ ] Domain bind + `DOMAIN_CLIENT` / `DOMAIN_SERVER` us URL par
-- [ ] `PORT` variable mat set karo (Zeabur inject karega)
+- [ ] `PORT=3080` (Networking HTTP :3080 ke saath)
 - [ ] `/health` OK
 - [ ] Register + Google Gemini se chat
