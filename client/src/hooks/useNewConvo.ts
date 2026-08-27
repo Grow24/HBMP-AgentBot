@@ -76,7 +76,7 @@ const useNewConvo = (index = 0) => {
         _disableParams?: boolean,
       ) => {
         const modelsConfig = modelsData ?? modelsQuery.data;
-        const { endpoint = null } = conversation;
+        const { endpoint = null } = conversation ?? {};
         const buildDefaultConversation = (endpoint === null || buildDefault) ?? false;
         const activePreset =
           // use default preset only when it's defined,

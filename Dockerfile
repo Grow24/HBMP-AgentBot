@@ -38,18 +38,33 @@ RUN \
 
 COPY --chown=node:node . .
 
+# Standalone app is served at origin root, not under /HBMP_AgentBot
+ENV AGENTBOT_BASE=/
+ENV HOST=0.0.0.0
+
 RUN \
-    # Build packages first
-    npm run build:packages; \
-    # React client build
-    NODE_OPTIONS="--max-old-space-size=2048" npm run build:client; \
+    if [ -f librechat.yaml.example ] && [ ! -f librechat.yaml ]; then \
+      cp librechat.yaml.example librechat.yaml; \
+    fi; \
+    # Build packages first - set memory limit to prevent OOM errors
+    NODE_OPTIONS="--max-old-space-size=8192" npm run build:packages; \
+    # React client build - increased memory limit to 8192MB (8GB) to prevent OOM errors
+    # Using higher limit due to large codebase and dependencies
+    NODE_OPTIONS="--max-old-space-size=8192" AGENTBOT_BASE=/ npm run build:client; \
     npm prune --production; \
     npm cache clean --force
 
 # Node API setup
-EXPOSE 3080
+# Zeabur maps the EXPOSE port. Runtime PORT can still be overridden.
 ENV HOST=0.0.0.0
-CMD ["npm", "run", "backend"]
+ENV PORT=3080
+ENV SEARCH=false
+EXPOSE 3080
+
+COPY --chown=node:node scripts/docker-entrypoint.sh /app/scripts/docker-entrypoint.sh
+RUN chmod +x /app/scripts/docker-entrypoint.sh
+
+CMD ["/app/scripts/docker-entrypoint.sh"]
 
 # Optional: for client with nginx routing
 # FROM nginx:stable-alpine AS nginx-client

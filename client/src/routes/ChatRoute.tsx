@@ -58,14 +58,12 @@ export default function ChatRoute() {
    *  Adjusting this may have unintended consequences on the conversation state.
    */
   useEffect(() => {
-    const shouldSetConvo =
-      (startupConfig && !hasSetConversation.current && !modelsQuery.data?.initial) ?? false;
-    /* Early exit if startupConfig is not loaded and conversation is already set and only initial models have loaded */
+    const shouldSetConvo = Boolean(startupConfig && !hasSetConversation.current && endpointsQuery.data);
     if (!shouldSetConvo) {
       return;
     }
 
-    if (conversationId === Constants.NEW_CONVO && endpointsQuery.data && modelsQuery.data) {
+    if (conversationId === Constants.NEW_CONVO && modelsQuery.data) {
       const result = getDefaultModelSpec(startupConfig);
       const spec = result?.default ?? result?.last;
       logger.log('conversation', 'ChatRoute, new convo effect', conversation);
@@ -123,33 +121,30 @@ export default function ChatRoute() {
     assistantListMap,
   ]);
 
+  const loading = (
+    <div className="flex h-screen items-center justify-center" aria-live="polite" role="status">
+      <Spinner className="text-text-primary" />
+    </div>
+  );
+
   if (endpointsQuery.isLoading || modelsQuery.isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center" aria-live="polite" role="status">
-        <Spinner className="text-text-primary" />
-      </div>
-    );
+    return loading;
   }
 
   if (!isAuthenticated) {
-    return null;
+    return loading;
   }
 
-  // if not a conversation
-  if (conversation?.conversationId === Constants.SEARCH) {
-    return null;
+  if (!conversation) {
+    return loading;
   }
-  // if conversationId not match
-  if (conversation?.conversationId !== conversationId && !conversation) {
-    return null;
-  }
-  // if conversationId is null
-  if (!conversationId) {
-    return null;
+
+  if (conversation?.conversationId === Constants.SEARCH || !conversationId) {
+    return loading;
   }
 
   return (
-    <ToolCallsMapProvider conversationId={conversation.conversationId ?? ''}>
+    <ToolCallsMapProvider conversationId={conversation?.conversationId || conversationId}>
       <ChatView index={index} />
     </ToolCallsMapProvider>
   );

@@ -1,14 +1,17 @@
 [phases.setup]
 nixPkgs = ["nodejs", "npm"]
 
+# Set NODE_OPTIONS globally for all phases
 [phases.install]
+env = { NODE_OPTIONS = "--max-old-space-size=8192" }
 cmds = ["npm ci"]
 
 [phases.build]
+env = { NODE_OPTIONS = "--max-old-space-size=8192", AGENTBOT_BASE = "/" }
 cmds = [
   "npm run build:packages",
   "npm run build:client"
 ]
 
 [start]
-cmd = "npm run backend"
+cmd = "sh -c 'test -f librechat.yaml || cp librechat.yaml.example librechat.yaml; npm run backend'"

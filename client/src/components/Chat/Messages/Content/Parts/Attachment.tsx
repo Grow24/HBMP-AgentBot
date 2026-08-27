@@ -3,8 +3,11 @@ import { imageExtRegex, Tools } from 'librechat-data-provider';
 import type { TAttachment, TFile, TAttachmentMetadata } from 'librechat-data-provider';
 import FileContainer from '~/components/Chat/Input/Files/FileContainer';
 import Image from '~/components/Chat/Messages/Content/Image';
+import Video from './Video';
 import { useAttachmentLink } from './LogLink';
 import { cn } from '~/utils';
+
+const videoExtRegex = /\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv|m4v|3gp|gif)$/i;
 
 const FileAttachment = memo(({ attachment }: { attachment: Partial<TAttachment> }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -80,6 +83,23 @@ const ImageAttachment = memo(({ attachment }: { attachment: TAttachment }) => {
   );
 });
 
+const VideoAttachment = memo(({ attachment }: { attachment: TAttachment }) => {
+  const { filepath = null } = attachment as TFile & TAttachmentMetadata;
+  
+  if (!filepath) {
+    return null;
+  }
+
+  return (
+    <Video
+      src={filepath}
+      title={attachment.filename || 'Video'}
+      controls={true}
+      autoplay={false}
+    />
+  );
+});
+
 export default function Attachment({ attachment }: { attachment?: TAttachment }) {
   if (!attachment) {
     return null;
@@ -93,7 +113,13 @@ export default function Attachment({ attachment }: { attachment?: TAttachment })
     ? imageExtRegex.test(attachment.filename) && width != null && height != null && filepath != null
     : false;
 
-  if (isImage) {
+  const isVideo = attachment.filename
+    ? videoExtRegex.test(attachment.filename) && filepath != null
+    : false;
+
+  if (isVideo) {
+    return <VideoAttachment attachment={attachment} />;
+  } else if (isImage) {
     return <ImageAttachment attachment={attachment} />;
   } else if (!attachment.filepath) {
     return null;
@@ -108,6 +134,7 @@ export function AttachmentGroup({ attachments }: { attachments?: TAttachment[] }
 
   const fileAttachments: TAttachment[] = [];
   const imageAttachments: TAttachment[] = [];
+  const videoAttachments: TAttachment[] = [];
 
   attachments.forEach((attachment) => {
     const { width, height, filepath = null } = attachment as TFile & TAttachmentMetadata;
@@ -118,7 +145,13 @@ export function AttachmentGroup({ attachments }: { attachments?: TAttachment[] }
         filepath != null
       : false;
 
-    if (isImage) {
+    const isVideo = attachment.filename
+      ? videoExtRegex.test(attachment.filename) && filepath != null
+      : false;
+
+    if (isVideo) {
+      videoAttachments.push(attachment);
+    } else if (isImage) {
       imageAttachments.push(attachment);
     } else if (attachment.type !== Tools.web_search) {
       fileAttachments.push(attachment);
@@ -127,6 +160,13 @@ export function AttachmentGroup({ attachments }: { attachments?: TAttachment[] }
 
   return (
     <>
+      {videoAttachments.length > 0 && (
+        <div className="mb-2 flex flex-col gap-4">
+          {videoAttachments.map((attachment, index) => (
+            <VideoAttachment attachment={attachment} key={`video-${index}`} />
+          ))}
+        </div>
+      )}
       {fileAttachments.length > 0 && (
         <div className="my-2 flex flex-wrap items-center gap-2.5">
           {fileAttachments.map((attachment, index) =>

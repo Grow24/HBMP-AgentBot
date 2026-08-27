@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { ThemeSelector } from '@librechat/client';
 import { TStartupConfig } from 'librechat-data-provider';
 import { ErrorMessage } from '~/components/Auth/ErrorMessage';
@@ -39,9 +40,9 @@ function AuthLayout({
         <div className="mx-auto sm:max-w-sm">
           <ErrorMessage>
             {localize('com_auth_error_invalid_reset_token')}{' '}
-            <a className="font-semibold text-green-600 hover:underline" href="/forgot-password">
+            <Link className="font-semibold text-green-600 hover:underline" to="/forgot-password">
               {localize('com_auth_click_here')}
-            </a>{' '}
+            </Link>{' '}
             {localize('com_auth_to_try_again')}
           </ErrorMessage>
         </div>
@@ -60,11 +61,11 @@ function AuthLayout({
     <div className="relative flex min-h-screen flex-col bg-white dark:bg-gray-900">
       <Banner />
       <BlinkAnimation active={isFetching}>
-        <div className="mt-6 h-10 w-full bg-cover">
+        <div className="mt-6 flex h-40 w-full items-center justify-center bg-cover">
           <img
-            src="assets/Icon_HBMP[1].png"
-            className="h-full w-full object-contain"
-            alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'LibreChat' })}
+            src="assets/Icon HBMP[1].png"
+            className="h-full max-w-xs object-contain"
+            alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'HBMP AgentBot' })}
           />
         </div>
       </BlinkAnimation>

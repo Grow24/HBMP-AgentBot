@@ -45,7 +45,7 @@ function ChatView({ index = 0 }: { index?: number }) {
       },
       [fileMap],
     ),
-    enabled: !!fileMap,
+    enabled: conversationId === Constants.NEW_CONVO ? false : true,
   });
 
   const chatHelpers = useChatHelpers(index, conversationId);
@@ -62,7 +62,11 @@ function ChatView({ index = 0 }: { index?: number }) {
   const isLandingPage =
     (!messagesTree || messagesTree.length === 0) &&
     (conversationId === Constants.NEW_CONVO || !conversationId);
-  const isNavigating = (!messagesTree || messagesTree.length === 0) && conversationId != null;
+  const isNavigating =
+    isLoading &&
+    (!messagesTree || messagesTree.length === 0) &&
+    conversationId != null &&
+    conversationId !== Constants.NEW_CONVO;
 
   if (isLoading && conversationId !== Constants.NEW_CONVO) {
     content = <LoadingSpinner />;

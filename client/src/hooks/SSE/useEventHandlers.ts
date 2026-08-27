@@ -655,7 +655,9 @@ export default function useEventHandlers({
         if (newConversation) {
           newConversation({
             template: { conversationId: convoId },
-            preset: tPresetSchema.parse(submission.conversation),
+            preset: submission.conversation
+              ? tPresetSchema.parse(submission.conversation)
+              : undefined,
           });
         }
         setIsSubmitting(false);
@@ -670,7 +672,9 @@ export default function useEventHandlers({
         if (newConversation) {
           newConversation({
             template: { conversationId: convoId },
-            preset: tPresetSchema.parse(submission.conversation),
+            preset: submission.conversation
+              ? tPresetSchema.parse(submission.conversation)
+              : undefined,
           });
         }
         setIsSubmitting(false);
@@ -692,7 +696,9 @@ export default function useEventHandlers({
       if (receivedConvoId && paramId === Constants.NEW_CONVO && newConversation) {
         newConversation({
           template: { conversationId: receivedConvoId },
-          preset: tPresetSchema.parse(submission.conversation),
+          preset: submission.conversation
+              ? tPresetSchema.parse(submission.conversation)
+              : undefined,
         });
       }
 
@@ -749,7 +755,9 @@ export default function useEventHandlers({
         if (newConversation) {
           newConversation({
             template: { conversationId: convoId },
-            preset: tPresetSchema.parse(submission.conversation),
+            preset: submission.conversation
+              ? tPresetSchema.parse(submission.conversation)
+              : undefined,
           });
         }
         setIsSubmitting(false);
@@ -802,7 +810,9 @@ export default function useEventHandlers({
         if (newConversation) {
           newConversation({
             template: { conversationId: conversationId || errorResponse.conversationId || v4() },
-            preset: tPresetSchema.parse(submission.conversation),
+            preset: submission.conversation
+              ? tPresetSchema.parse(submission.conversation)
+              : undefined,
           });
         }
         setIsSubmitting(false);

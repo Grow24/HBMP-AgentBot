@@ -2,18 +2,18 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8" />
-    <base href="/" />
+    <base href="%BASE_URL%" />
     <meta name="theme-color" content="#171717" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="description" content="LibreChat - An open source chat application with support for multiple AI models" />
-    <title>HBMP-Agent</title>
+    <meta name="description" content="HBMP AgentBot - An advanced AI agent platform for intelligent automation and conversation management" />
+    <title>HBMP AgentBot</title>
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png" />
     <link rel="apple-touch-icon" href="assets/icon-192x192.png" />
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
+    <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content, viewport-fit=cover" />
     <style>
       html,
       body {
@@ -49,17 +49,12 @@
       `;
       document.head.appendChild(loadingContainerStyle);
     </script>
+    <!-- Must stay /src/main.jsx (no %BASE_URL%): Vite resolves it from project root; base in vite.config handles deploy path. -->
     <script defer type="module" src="/src/main.jsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('SW registered: ', registration);
-            })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
-            });
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((registration) => registration.unregister());
         });
       }
     </script>

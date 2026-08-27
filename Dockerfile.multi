@@ -59,7 +59,8 @@ COPY client ./
 COPY --from=data-provider-build /app/packages/data-provider/dist /app/packages/data-provider/dist
 COPY --from=client-package-build /app/packages/client/dist /app/packages/client/dist
 COPY --from=client-package-build /app/packages/client/src /app/packages/client/src
-ENV NODE_OPTIONS="--max-old-space-size=2048"
+ENV NODE_OPTIONS="--max-old-space-size=8192"
+ENV AGENTBOT_BASE=/
 RUN npm run build
 
 # API setup (including client dist)
@@ -76,7 +77,10 @@ COPY --from=data-provider-build /app/packages/data-provider/dist ./packages/data
 COPY --from=data-schemas-build /app/packages/data-schemas/dist ./packages/data-schemas/dist
 COPY --from=api-package-build /app/packages/api/dist ./packages/api/dist
 COPY --from=client-build /app/client/dist ./client/dist
+COPY librechat.yaml.example ./librechat.yaml.example
+RUN cp librechat.yaml.example librechat.yaml
 WORKDIR /app/api
 EXPOSE 3080
 ENV HOST=0.0.0.0
+ENV AGENTBOT_BASE=/
 CMD ["node", "server/index.js"]

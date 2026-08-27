@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { v4 } from 'uuid';
+import axios from 'axios';
 import { SSE } from 'sse.js';
 import { useSetRecoilState } from 'recoil';
 import {
@@ -104,9 +105,23 @@ export default function useSSE(
     let textIndex = null;
     clearStepMaps();
 
+    const headerToken = String(axios.defaults.headers.common.Authorization || '').replace(
+      /^Bearer\s+/i,
+      '',
+    );
+    const authToken = [token, headerToken].find(
+      (value) => value && value !== 'undefined' && value.split('.').length === 3,
+    );
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
+    }
+
     const sse = new SSE(payloadData.server, {
+      method: 'POST',
       payload: JSON.stringify(payload),
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers,
+      withCredentials: true,
     });
 
     sse.addEventListener('attachment', (e: MessageEvent) => {

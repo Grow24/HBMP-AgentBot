@@ -11,23 +11,44 @@ import { VitePWA } from 'vite-plugin-pwa';
 const backendPort = process.env.BACKEND_PORT && Number(process.env.BACKEND_PORT) || 3080;
 const backendURL = process.env.HOST ? `http://${process.env.HOST}:${backendPort}` : `http://localhost:${backendPort}`;
 
+const agentBotBase = process.env.AGENTBOT_BASE || '/';
+const agentBotBaseNormalized = agentBotBase.endsWith('/') ? agentBotBase : `${agentBotBase}/`;
+const agentBotBasePath =
+  agentBotBase === '/' || agentBotBase === '' ? '' : agentBotBase.replace(/\/$/, '');
+
+const backendProxy = {
+  target: backendURL,
+  changeOrigin: true,
+};
+
+const prefixedBackendProxy = agentBotBasePath
+  ? {
+      ...backendProxy,
+      rewrite: (path: string) => path.replace(agentBotBasePath, '') || '/',
+    }
+  : backendProxy;
+
+const devProxy: Record<string, typeof backendProxy | typeof prefixedBackendProxy> = {
+  '/api': backendProxy,
+  '/oauth': backendProxy,
+};
+
+if (agentBotBasePath) {
+  devProxy[`${agentBotBasePath}/api`] = prefixedBackendProxy;
+  devProxy[`${agentBotBasePath}/oauth`] = prefixedBackendProxy;
+}
+
 export default defineConfig(({ command }) => ({
-  base: '',
+  base: agentBotBase,
+  transformIndexHtml(html) {
+    return html.replace(/%BASE_URL%/g, agentBotBaseNormalized);
+  },
   server: {
     allowedHosts: process.env.VITE_ALLOWED_HOSTS && process.env.VITE_ALLOWED_HOSTS.split(',') || [],
     host: process.env.HOST || 'localhost',
     port: process.env.PORT && Number(process.env.PORT) || 3090,
     strictPort: false,
-    proxy: {
-      '/api': {
-        target: backendURL,
-        changeOrigin: true,
-      },
-      '/oauth': {
-        target: backendURL,
-        changeOrigin: true,
-      },
-    },
+    proxy: devProxy,
   },
   // Set the directory where environment variables are loaded from and restrict prefixes
   envDir: '../',
@@ -36,10 +57,11 @@ export default defineConfig(({ command }) => ({
     react(),
     nodePolyfills(),
     VitePWA({
-      injectRegister: 'auto', // 'auto' | 'manual' | 'disabled'
-      registerType: 'autoUpdate', // 'prompt' | 'autoUpdate'
+      disable: Boolean(agentBotBasePath),
+      injectRegister: false,
+      registerType: 'autoUpdate',
       devOptions: {
-        enabled: false, // disable service worker registration in development mode
+        enabled: false,
       },
       useCredentials: true,
       includeManifestIcons: false,
@@ -52,14 +74,15 @@ export default defineConfig(({ command }) => ({
           'assets/maskable-icon.png',
           'manifest.webmanifest',
         ],
-        globIgnores: ['images/**/*', '**/*.map', 'index.html'],
-        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-        navigateFallbackDenylist: [/^\/oauth/, /^\/api/],
+        globIgnores: ['images/**/*', '**/*.map'],
+        navigateFallback: `${agentBotBaseNormalized}index.html`,
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+        navigateFallbackDenylist: [/^\/oauth/, /^\/api/, /\/api\//, /\/oauth\//],
       },
       includeAssets: [],
       manifest: {
-        name: 'LibreChat',
-        short_name: 'LibreChat',
+        name: 'HBMP AgentBot',
+        short_name: 'HBMP AgentBot',
         display: 'standalone',
         background_color: '#000000',
         theme_color: '#009688',
@@ -100,19 +123,21 @@ export default defineConfig(({ command }) => ({
   ],
   publicDir: command === 'serve' ? './public' : false,
   build: {
-    sourcemap: process.env.NODE_ENV === 'development',
+    sourcemap: false, // Disabled for production to save ~30% memory during build
     outDir: './dist',
-    minify: 'terser',
+    minify: 'esbuild', // esbuild uses ~40% less memory than terser
+    target: 'es2015', // Reduces transformation overhead
+    cssCodeSplit: true,
+    reportCompressedSize: false, // Don't calculate compressed sizes to save memory
     rollupOptions: {
-      preserveEntrySignatures: 'strict',
+      // Reduce parallel operations to save memory
+      maxParallelFileOps: 2, // Limit parallel file operations
+      preserveEntrySignatures: 'allow-extension', // Less memory intensive than 'strict'
       output: {
         manualChunks(id: string) {
           const normalizedId = id.replace(/\\/g, '/');
           if (normalizedId.includes('node_modules')) {
             // High-impact chunking for large libraries
-            if (normalizedId.includes('@codesandbox/sandpack')) {
-              return 'sandpack';
-            }
             if (normalizedId.includes('react-virtualized')) {
               return 'virtualization';
             }
@@ -128,9 +153,8 @@ export default defineConfig(({ command }) => ({
             if (normalizedId.includes('@dicebear')) {
               return 'avatars';
             }
-            if (normalizedId.includes('react-dnd') || normalizedId.includes('react-flip-toolkit')) {
-              return 'react-interactions';
-            }
+            // Keep react-dnd and react-flip-toolkit with React to avoid dependency issues
+            // They will be in vendor chunk if React is already chunked
             if (normalizedId.includes('react-hook-form')) {
               return 'forms';
             }
@@ -218,6 +242,57 @@ export default defineConfig(({ command }) => ({
             }
             if (normalizedId.includes('@headlessui')) {
               return 'headlessui';
+            }
+
+            // Split large vendor libraries into separate chunks
+            if (normalizedId.includes('@mcp-ui')) {
+              return 'mcp-ui';
+            }
+            // Don't split React - keep it in vendor to avoid createContext errors
+            // React and react-dom should stay together for proper module resolution
+            if (normalizedId.includes('@radix-ui')) {
+              return 'radix-ui';
+            }
+            // Split large utility libraries
+            if (normalizedId.includes('recoil')) {
+              return 'recoil';
+            }
+            if (normalizedId.includes('jotai')) {
+              return 'jotai';
+            }
+            // Split markdown and related
+            if (normalizedId.includes('remark') || normalizedId.includes('rehype') || normalizedId.includes('micromark')) {
+              return 'markdown-core';
+            }
+            // Split UI libraries
+            if (normalizedId.includes('@ariakit')) {
+              return 'ariakit';
+            }
+            if (normalizedId.includes('lucide-react')) {
+              return 'icons';
+            }
+            // Split heavy image processing
+            if (normalizedId.includes('html-to-image')) {
+              return 'image-processing';
+            }
+            // Split i18next and locale files
+            if (normalizedId.includes('i18next') || normalizedId.includes('react-i18next')) {
+              return 'i18n-core';
+            }
+            // Split heavy libraries
+            if (normalizedId.includes('react-markdown')) {
+              return 'markdown-renderer';
+            }
+            if (normalizedId.includes('react-router')) {
+              return 'router';
+            }
+            // Split validation libraries
+            if (normalizedId.includes('zod')) {
+              return 'validation-core';
+            }
+            // Split date/time libraries
+            if (normalizedId.includes('date-fns')) {
+              return 'date-utils';
             }
 
             // Everything else falls into a generic vendor chunk.

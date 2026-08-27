@@ -309,7 +309,7 @@ export const openAISettings = {
 
 export const googleSettings = {
   model: {
-    default: 'gemini-1.5-flash-latest' as const,
+    default: 'gemini-2.5-flash' as const,
   },
   maxOutputTokens: {
     min: 1 as const,

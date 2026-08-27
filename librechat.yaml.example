@@ -1,0 +1,56 @@
+version: 1.3.1
+
+# Cache settings
+cache: true
+
+# Interface configuration
+interface:
+  customWelcome: 'Welcome to HBMP AgentBot!'
+  fileSearch: true
+  endpointsMenu: true
+  modelSelect: true
+  parameters: true
+  sidePanel: true
+  presets: true
+  prompts: true
+  bookmarks: true
+  multiConvo: true
+  agents: true
+  peoplePicker:
+    users: true
+    groups: true
+    roles: true
+  fileCitations: true
+
+# Endpoints configuration
+endpoints:
+  # Disable other endpoints to make Google the only option
+  openAI:
+    disabled: true
+  anthropic:
+    disabled: true
+
+  google:
+    # Default models for Google endpoint - Gemini 2.5 Flash as primary
+    models:
+      default:
+        - 'gemini-2.5-flash'
+        - 'gemini-2.5-flash-lite'
+        - 'gemini-2.0-flash'
+        - 'gemini-1.5-pro'
+    titleConvo: true
+    titleModel: 'gemini-2.5-flash'
+    summarize: true
+    summaryModel: 'gemini-2.5-flash'
+    modelDisplayLabel: 'Google Gemini'
+
+  # Agents endpoint - uses Google Gemini as the default provider
+  agents:
+    disableBuilder: false
+    modelOptions:
+      endpoint: 'google'
+      model: 'gemini-2.5-flash'
+    capabilities: ['execute_code', 'file_search', 'web_search', 'actions', 'artifacts']
+    searchModels:
+      - 'gemini-2.5-flash'
+      - 'gemini-2.5-flash-lite'

@@ -7,6 +7,7 @@ import { useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
 import ConvoIcon from '~/components/Endpoints/ConvoIcon';
 import { useLocalize, useAuthContext } from '~/hooks';
 import { getIconEndpoint, getEntity } from '~/utils';
+import WelcomeModal from './WelcomeModal';
 
 const containerClassName =
   'shadow-stroke relative flex h-full items-center justify-center rounded-full bg-white dark:bg-presentation dark:text-white text-black dark:after:shadow-none ';
@@ -191,7 +192,7 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
             <SplitText
               key={`split-text-${greetingText}${user?.name ? '-user' : ''}`}
               text={greetingText}
-              className={`${getTextSizeClass(greetingText)} font-medium text-text-primary`}
+              className={`${getTextSizeClass(greetingText)} font-medium text-text-primary whitespace-pre-line`}
               delay={50}
               textAlign="center"
               animationFrom={{ opacity: 0, transform: 'translate3d(0,50px,0)' }}
@@ -204,11 +205,14 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
           )}
         </div>
         {description && (
-          <div className="animate-fadeIn mt-4 max-w-md text-center text-sm font-normal text-text-primary">
+          <div className="animate-fadeIn mt-4 max-w-md text-center text-sm font-normal text-text-primary whitespace-pre-line">
             {description}
           </div>
         )}
       </div>
+
+      {/* Welcome Modal - Always render */}
+      <WelcomeModal welcomeMessage="" />
     </div>
   );
 }

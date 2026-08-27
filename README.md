@@ -1,60 +1,46 @@
-# Grow24.ai-Agent
+# HBMP AgentBot
 
 An advanced AI agent platform for intelligent automation and conversation management.
 
-## 🚀 Features
+This repository is a **standalone app**. It serves at `/` (not under a parent website path).
 
-- 🤖 **Multi-Model AI Support**: Integration with various AI providers and models
-- 🔧 **Code Interpreter**: Secure execution environment for multiple programming languages
-- 🔍 **Web Search Integration**: Enhanced AI context with internet search capabilities
-- 💬 **Multimodal Interactions**: Support for text, images, and file processing
-- 🎨 **Image Generation**: Text-to-image and image editing capabilities
-- 🌎 **Multilingual Support**: Interface available in multiple languages
-- 👥 **Multi-User Access**: Secure authentication and user management
-- ⚙️ **Flexible Deployment**: Docker support and cloud deployment options
+- Local / Docker: **[STANDALONE.md](./STANDALONE.md)**
+- Zeabur: **[ZEABUR_DEPLOYMENT.md](./ZEABUR_DEPLOYMENT.md)**
 
-## 🛠️ Installation
+## Features
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Grow24/Grow24.ai-Agent.git
-   cd Grow24.ai-Agent
-   ```
+- Multi-model AI (Google Gemini by default)
+- Agents, file search, web search, code interpreter
+- Multi-user auth
+- Docker and Zeabur deployment
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Configure environment variables:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-4. Start the application:
-   ```bash
-   npm start
-   ```
-
-## 🐳 Docker Deployment
+## Local install
 
 ```bash
-docker-compose up -d
+git clone https://github.com/Grow24/HBMP-AgentBot.git
+cd HBMP-AgentBot
+npm run setup
+# Edit .env — GOOGLE_KEY, DOMAIN_CLIENT / DOMAIN_SERVER, secrets
+npm install
+npm run standalone:dev    # API :3080 + UI :3090
+# or
+npm run standalone:prod   # one process on :3080
 ```
 
-## 📖 Documentation
+## Docker
 
-For detailed setup and configuration instructions, please refer to the documentation.
+```bash
+npm run standalone:docker
+```
 
-## 🤝 Contributing
+App URL: `http://localhost:3080`
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## Zeabur
 
-## 📄 License
+1. Push this repo to GitHub (`Grow24/HBMP-AgentBot`)
+2. Zeabur → New Project → add **MongoDB** + Git service from this repo
+3. Set env vars as in [ZEABUR_DEPLOYMENT.md](./ZEABUR_DEPLOYMENT.md)
 
-This project is licensed under the terms specified in the LICENSE file.
+## License
 
-## Railway Auto-Deploy Test
-**Test timestamp:** 2025-01-21 15:30 UTC  
-**Status:** Testing Railway connection to HBMP-AgentBot repository
+See the LICENSE file.

@@ -1,0 +1,6 @@
+# HBMP AgentBot as its own site (not under the parent website)
+
+:80 {
+	encode gzip zstd
+	reverse_proxy 127.0.0.1:3080
+}

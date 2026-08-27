@@ -5,7 +5,7 @@ import { getConfigDefaults } from 'librechat-data-provider';
 import { ResizablePanel, ResizablePanelGroup, useMediaQuery } from '@librechat/client';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
 import { useGetStartupConfig } from '~/data-provider';
-import ArtifactsPanel from './ArtifactsPanel';
+// import ArtifactsPanel from './ArtifactsPanel'; // Removed - artifacts feature disabled
 import { normalizeLayout } from '~/utils';
 import SidePanel from './SidePanel';
 import store from '~/store';
@@ -42,23 +42,17 @@ const SidePanelGroup = memo(
     const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
     const [fullCollapse, setFullCollapse] = useState(fullPanelCollapse);
     const [collapsedSize, setCollapsedSize] = useState(navCollapsedSize);
-    const [shouldRenderArtifacts, setShouldRenderArtifacts] = useState(artifacts != null);
+    // Artifacts feature disabled - always set to false
+    const shouldRenderArtifacts = false;
 
     const isSmallScreen = useMediaQuery('(max-width: 767px)');
     const hideSidePanel = useRecoilValue(store.hideSidePanel);
 
     const calculateLayout = useCallback(() => {
-      if (artifacts == null) {
-        const navSize = defaultLayout.length === 2 ? defaultLayout[1] : defaultLayout[2];
-        return [100 - navSize, navSize];
-      } else {
-        const navSize = 0;
-        const remainingSpace = 100 - navSize;
-        const newMainSize = Math.floor(remainingSpace / 2);
-        const artifactsSize = remainingSpace - newMainSize;
-        return [newMainSize, artifactsSize, navSize];
-      }
-    }, [artifacts, defaultLayout]);
+      // Artifacts feature disabled - always use simple layout
+      const navSize = defaultLayout.length === 2 ? defaultLayout[1] : defaultLayout[2];
+      return [100 - navSize, navSize];
+    }, [defaultLayout]);
 
     const currentLayout = useMemo(() => normalizeLayout(calculateLayout()), [calculateLayout]);
 
@@ -87,7 +81,8 @@ const SidePanelGroup = memo(
       }
     }, [isSmallScreen, defaultCollapsed, navCollapsedSize, fullPanelCollapse]);
 
-    const minSizeMain = useMemo(() => (artifacts != null ? 15 : 30), [artifacts]);
+    // Artifacts feature disabled - always use default min size
+    const minSizeMain = useMemo(() => 30, []);
 
     /** Memoized close button handler to prevent re-creating it */
     const handleClosePanel = useCallback(() => {
@@ -117,15 +112,7 @@ const SidePanelGroup = memo(
             {children}
           </ResizablePanel>
 
-          {!isSmallScreen && (
-            <ArtifactsPanel
-              artifacts={artifacts}
-              currentLayout={currentLayout}
-              minSizeMain={minSizeMain}
-              shouldRender={shouldRenderArtifacts}
-              onRenderChange={setShouldRenderArtifacts}
-            />
-          )}
+          {/* ArtifactsPanel removed - artifacts feature disabled */}
 
           {!hideSidePanel && interfaceConfig.sidePanel === true && (
             <SidePanel
@@ -144,9 +131,7 @@ const SidePanelGroup = memo(
             />
           )}
         </ResizablePanelGroup>
-        {artifacts != null && isSmallScreen && (
-          <div className="fixed inset-0 z-[100]">{artifacts}</div>
-        )}
+        {/* Artifacts feature disabled - removed mobile artifacts overlay */}
         <button
           aria-label="Close right side panel"
           className={`nav-mask ${!isCollapsed ? 'active' : ''}`}

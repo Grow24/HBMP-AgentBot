@@ -21,6 +21,7 @@ import {
   AttachmentIcon,
   SharePointIcon,
 } from '@librechat/client';
+import FileUploadErrorBoundary from './FileUploadErrorBoundary';
 import type { EndpointFileConfig } from 'librechat-data-provider';
 import {
   useAgentToolPermissions,
@@ -61,10 +62,21 @@ const AttachFileMenu = ({
     ephemeralAgentByConvoId(conversationId),
   );
   const [toolResource, setToolResource] = useState<EToolResources | undefined>();
-  const { handleFileChange } = useFileHandling();
+  const { handleFileChange: originalHandleFileChange } = useFileHandling();
   const { handleSharePointFiles, isProcessing, downloadProgress } = useSharePointFileHandling({
     toolResource,
   });
+
+  // Safe wrapper for file change handling to prevent crash on permission errors
+  const handleFileChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>, resource?: EToolResources) => {
+    try {
+      originalHandleFileChange(e, resource);
+    } catch (error) {
+      console.error('File upload error:', error);
+      // Silently fail - error boundary will catch if it's critical
+      // For permission errors, we don't want to show a crash
+    }
+  }, [originalHandleFileChange]);
 
   const { agentsConfig } = useGetAgentsConfig();
   const { data: startupConfig } = useGetStartupConfig();
@@ -243,7 +255,7 @@ const AttachFileMenu = ({
   };
 
   return (
-    <>
+    <FileUploadErrorBoundary>
       <FileUpload
         ref={inputRef}
         handleFileChange={(e) => {
@@ -270,7 +282,7 @@ const AttachFileMenu = ({
         downloadProgress={downloadProgress}
         maxSelectionCount={endpointFileConfig?.fileLimit}
       />
-    </>
+    </FileUploadErrorBoundary>
   );
 };
 

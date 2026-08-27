@@ -5,5 +5,9 @@ export function setAcceptLanguageHeader(value: string): void {
 }
 
 export function setTokenHeader(token: string) {
+  if (!token || token === 'undefined' || token === 'null') {
+    delete axios.defaults.headers.common['Authorization'];
+    return;
+  }
   axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
 }
