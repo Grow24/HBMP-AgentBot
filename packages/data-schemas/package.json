@@ -17,8 +17,8 @@
     "dist"
   ],
   "scripts": {
-    "clean": "rimraf dist",
-    "build": "npm run clean && rollup -c --silent --bundleConfigAsCjs",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "node ../../scripts/run-rollup.js",
     "build:watch": "rollup -c -w",
     "test": "jest --coverage --watch",
     "test:ci": "jest --coverage --ci",
