@@ -4,6 +4,7 @@ FROM node:20-alpine AS node
 
 RUN apk add --no-cache jemalloc python3 py3-pip uv make g++ git
 ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2
+ENV PATH="/app/node_modules/.bin:${PATH}"
 
 COPY --from=ghcr.io/astral-sh/uv:0.6.13 /uv /uvx /bin/
 RUN uv --version
@@ -12,14 +13,13 @@ WORKDIR /app
 RUN mkdir -p /app/client/public/images /app/api/logs /app/uploads \
     && touch /app/.env
 
-# Install as root (same as Dockerfile.multi). USER node + extra workspace
-# package.json made `npm ci` exit 1 on Zeabur.
 COPY package.json package-lock.json ./
 COPY api/package.json ./api/package.json
 COPY client/package.json ./client/package.json
 COPY packages/data-provider/package.json ./packages/data-provider/package.json
 COPY packages/data-schemas/package.json ./packages/data-schemas/package.json
 COPY packages/api/package.json ./packages/api/package.json
+COPY packages/client/package.json ./packages/client/package.json
 
 RUN npm config set fetch-retry-maxtimeout 600000 \
     && npm config set fetch-retries 5 \
@@ -30,36 +30,32 @@ COPY . .
 
 ENV AGENTBOT_BASE=/
 ENV HOST=0.0.0.0
-ARG HBMP_BUILD=2026-08-27-dist4
 ENV NODE_OPTIONS=--max-old-space-size=3072
 
-# Do not npm prune: it drops workspace dist (@librechat/data-schemas crash-loop).
-RUN set -eux; \
-    echo "HBMP_BUILD=${HBMP_BUILD}"; \
-    if [ -f librechat.yaml.example ] && [ ! -f librechat.yaml ]; then \
+RUN if [ -f librechat.yaml.example ] && [ ! -f librechat.yaml ]; then \
       cp librechat.yaml.example librechat.yaml; \
-    fi; \
-    npm run build:data-provider; \
-    npm run build:data-schemas; \
-    npm run build:api; \
-    npm run build:client-package; \
-    AGENTBOT_BASE=/ npm run build:client; \
-    test -f packages/data-provider/dist/index.js; \
-    test -f packages/data-schemas/dist/index.cjs; \
-    test -f packages/api/dist/index.js; \
-    mkdir -p node_modules/@librechat; \
-    rm -rf node_modules/@librechat/data-schemas node_modules/@librechat/api node_modules/librechat-data-provider; \
-    mkdir -p node_modules/@librechat/data-schemas node_modules/@librechat/api node_modules/librechat-data-provider; \
-    cp -a packages/data-schemas/package.json node_modules/@librechat/data-schemas/; \
-    cp -a packages/data-schemas/dist node_modules/@librechat/data-schemas/dist; \
-    cp -a packages/api/package.json node_modules/@librechat/api/; \
-    cp -a packages/api/dist node_modules/@librechat/api/dist; \
-    cp -a packages/data-provider/package.json node_modules/librechat-data-provider/; \
-    cp -a packages/data-provider/dist node_modules/librechat-data-provider/dist; \
-    test -f node_modules/@librechat/data-schemas/dist/index.cjs; \
-    test -f node_modules/@librechat/api/dist/index.js; \
-    chown -R node:node /app; \
-    npm cache clean --force
+    fi
+
+# Split layers so Zeabur logs show which command is missing (exit 127).
+RUN npm run build:data-provider && test -f packages/data-provider/dist/index.js
+RUN npm run build:data-schemas && test -f packages/data-schemas/dist/index.cjs
+RUN npm run build:api && test -f packages/api/dist/index.js
+RUN npm run build:client-package && test -f packages/client/dist/index.js
+RUN AGENTBOT_BASE=/ npm run build:client && test -d client/dist
+
+# Real copies, not workspace symlinks. Do not prune.
+RUN mkdir -p node_modules/@librechat \
+    && rm -rf node_modules/@librechat/data-schemas node_modules/@librechat/api node_modules/librechat-data-provider \
+    && mkdir -p node_modules/@librechat/data-schemas node_modules/@librechat/api node_modules/librechat-data-provider \
+    && cp -a packages/data-schemas/package.json node_modules/@librechat/data-schemas/ \
+    && cp -a packages/data-schemas/dist node_modules/@librechat/data-schemas/dist \
+    && cp -a packages/api/package.json node_modules/@librechat/api/ \
+    && cp -a packages/api/dist node_modules/@librechat/api/dist \
+    && cp -a packages/data-provider/package.json node_modules/librechat-data-provider/ \
+    && cp -a packages/data-provider/dist node_modules/librechat-data-provider/dist \
+    && test -f node_modules/@librechat/data-schemas/dist/index.cjs \
+    && test -f node_modules/@librechat/api/dist/index.js \
+    && chown -R node:node /app
 
 ENV HOST=0.0.0.0
 ENV SEARCH=false
