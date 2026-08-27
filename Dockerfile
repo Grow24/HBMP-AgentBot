@@ -25,6 +25,7 @@ COPY --chown=node:node client/package.json ./client/package.json
 COPY --chown=node:node packages/data-provider/package.json ./packages/data-provider/package.json
 COPY --chown=node:node packages/data-schemas/package.json ./packages/data-schemas/package.json
 COPY --chown=node:node packages/api/package.json ./packages/api/package.json
+COPY --chown=node:node packages/client/package.json ./packages/client/package.json
 
 RUN \
     # Allow mounting of these files, which have no default
@@ -42,16 +43,37 @@ COPY --chown=node:node . .
 ENV AGENTBOT_BASE=/
 ENV HOST=0.0.0.0
 
-RUN \
+# 3072 fits Zeabur 4GB builders; 8192 OOMs and used to continue via `;` so dist never landed in the image.
+ENV NODE_OPTIONS=--max-old-space-size=3072
+
+RUN set -eux; \
     if [ -f librechat.yaml.example ] && [ ! -f librechat.yaml ]; then \
       cp librechat.yaml.example librechat.yaml; \
     fi; \
-    # Build packages first - set memory limit to prevent OOM errors
-    NODE_OPTIONS="--max-old-space-size=8192" npm run build:packages; \
-    # React client build - increased memory limit to 8192MB (8GB) to prevent OOM errors
-    # Using higher limit due to large codebase and dependencies
-    NODE_OPTIONS="--max-old-space-size=8192" AGENTBOT_BASE=/ npm run build:client; \
-    npm prune --production; \
+    npm run build:data-provider; \
+    npm run build:data-schemas; \
+    npm run build:api; \
+    npm run build:client-package; \
+    AGENTBOT_BASE=/ npm run build:client; \
+    test -f packages/data-provider/dist/index.js; \
+    test -f packages/data-schemas/dist/index.cjs; \
+    test -f packages/api/dist/index.js; \
+    mkdir -p /tmp/lc-dist; \
+    cp -a packages/data-provider/dist /tmp/lc-dist/data-provider; \
+    cp -a packages/data-schemas/dist /tmp/lc-dist/data-schemas; \
+    cp -a packages/api/dist /tmp/lc-dist/api; \
+    cp -a client/dist /tmp/lc-dist/client; \
+    npm prune --omit=dev; \
+    cp -a /tmp/lc-dist/data-provider packages/data-provider/dist; \
+    cp -a /tmp/lc-dist/data-schemas packages/data-schemas/dist; \
+    cp -a /tmp/lc-dist/api packages/api/dist; \
+    cp -a /tmp/lc-dist/client client/dist; \
+    mkdir -p node_modules/@librechat; \
+    ln -sfn /app/packages/data-schemas node_modules/@librechat/data-schemas; \
+    ln -sfn /app/packages/api node_modules/@librechat/api; \
+    ln -sfn /app/packages/data-provider node_modules/librechat-data-provider; \
+    test -f node_modules/@librechat/data-schemas/dist/index.cjs; \
+    test -f node_modules/@librechat/api/dist/index.js; \
     npm cache clean --force
 
 # Node API setup
