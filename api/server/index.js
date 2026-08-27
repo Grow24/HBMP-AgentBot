@@ -34,7 +34,8 @@ const { PORT, HOST, ALLOW_SOCIAL_LOGIN, DISABLE_COMPRESSION, TRUST_PROXY } = pro
 
 // Allow PORT=0 to be used for automatic free port assignment
 const port = isNaN(Number(PORT)) ? 3080 : Number(PORT);
-const host = HOST || 'localhost';
+// Containers / Zeabur must bind all interfaces or the gateway returns 502.
+const host = HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost');
 const trusted_proxy = Number(TRUST_PROXY) || 1; /* trust first proxy by default */
 
 const app = express();
@@ -218,7 +219,10 @@ const startServer = async () => {
   });
 };
 
-startServer();
+startServer().catch((err) => {
+  logger.error('Failed to start server:', err);
+  process.exit(1);
+});
 
 let messageCount = 0;
 process.on('uncaughtException', (err) => {

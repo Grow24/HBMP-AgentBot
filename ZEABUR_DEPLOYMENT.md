@@ -37,7 +37,6 @@ App service → **Variables**. Raw edit me ye paste karo, phir secrets replace k
 ```bash
 NODE_ENV=production
 HOST=0.0.0.0
-PORT=3080
 AGENTBOT_BASE=/
 TRUST_PROXY=1
 SEARCH=false
@@ -78,9 +77,13 @@ openssl rand -hex 16
 
 `DOMAIN_CLIENT` / `DOMAIN_SERVER`: Domain tab se public URL add karo, phir `${ZEABUR_WEB_URL}` resolve ho jayega. Agar nahi ho, manually `https://your-app.zeabur.app` set karo (trailing slash mat do).
 
-## 4) Port
+## 4) Port (502 ka common cause)
 
-Dockerfile **3080** expose karti hai. Variables me `PORT=3080` rakho. Zeabur networking me app port **3080** ho.
+`PORT` variable **mat** set karo — Zeabur khud inject karta hai (aksar **8080**). App `$PORT` pe listen karti hai.
+
+`hbmp-agentbot` → **Networking** → public domain ka container port **usi `$PORT` ke barabar** ho (usually HTTP :8080).
+
+Agar `PORT=3080` rakha hai aur gateway 8080 pe hai, site **502** degi. `PORT` delete karke redeploy karo.
 
 ## 5) Domain
 

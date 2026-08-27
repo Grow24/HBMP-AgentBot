@@ -55,11 +55,11 @@ RUN \
     npm cache clean --force
 
 # Node API setup
-# Zeabur maps the EXPOSE port. Runtime PORT can still be overridden.
+# Do not pin PORT here — Zeabur injects $PORT (often 8080). Local compose still
+# passes PORT=3080. Listen on process.env.PORT in the entrypoint.
 ENV HOST=0.0.0.0
-ENV PORT=3080
 ENV SEARCH=false
-EXPOSE 3080
+EXPOSE 3080 8080
 
 COPY --chown=node:node scripts/docker-entrypoint.sh /app/scripts/docker-entrypoint.sh
 RUN chmod +x /app/scripts/docker-entrypoint.sh

@@ -49,6 +49,7 @@ async function connectDb() {
   if (!cached.promise || disconnected) {
     const opts = {
       bufferCommands: false,
+      serverSelectionTimeoutMS: parseInt(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS) || 15000,
       ...(maxPoolSize ? { maxPoolSize } : {}),
       ...(minPoolSize ? { minPoolSize } : {}),
       ...(maxConnecting ? { maxConnecting } : {}),
