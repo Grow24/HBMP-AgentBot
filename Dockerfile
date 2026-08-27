@@ -21,10 +21,16 @@ COPY packages/data-schemas/package.json ./packages/data-schemas/package.json
 COPY packages/api/package.json ./packages/api/package.json
 COPY packages/client/package.json ./packages/client/package.json
 
+# Zeabur injects NODE_ENV=production into the image build. That makes
+# `npm ci` skip rollup/rimraf (devDependencies) and package builds exit 127.
+ENV NODE_ENV=development
+
 RUN npm config set fetch-retry-maxtimeout 600000 \
     && npm config set fetch-retries 5 \
     && npm config set fetch-retry-mintimeout 15000 \
-    && npm ci --no-audit --legacy-peer-deps
+    && NODE_ENV=development npm ci --no-audit --legacy-peer-deps --include=dev \
+    && test -x node_modules/.bin/rollup \
+    && test -x node_modules/.bin/rimraf
 
 COPY . .
 
@@ -57,6 +63,7 @@ RUN mkdir -p node_modules/@librechat \
     && test -f node_modules/@librechat/api/dist/index.js \
     && chown -R node:node /app
 
+ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV SEARCH=false
 EXPOSE 3080 8080
