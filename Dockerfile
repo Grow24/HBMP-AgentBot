@@ -1,55 +1,39 @@
 # v0.8.1-rc1
 
-# Base node image
 FROM node:20-alpine AS node
 
-# Install jemalloc
-RUN apk add --no-cache jemalloc
-RUN apk add --no-cache python3 py3-pip uv
-
-# Set environment variable to use jemalloc
+RUN apk add --no-cache jemalloc python3 py3-pip uv make g++ git
 ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2
 
-# Add `uv` for extended MCP support
 COPY --from=ghcr.io/astral-sh/uv:0.6.13 /uv /uvx /bin/
 RUN uv --version
 
-RUN mkdir -p /app && chown node:node /app
 WORKDIR /app
+RUN mkdir -p /app/client/public/images /app/api/logs /app/uploads \
+    && touch /app/.env
 
-USER node
+# Install as root (same as Dockerfile.multi). USER node + extra workspace
+# package.json made `npm ci` exit 1 on Zeabur.
+COPY package.json package-lock.json ./
+COPY api/package.json ./api/package.json
+COPY client/package.json ./client/package.json
+COPY packages/data-provider/package.json ./packages/data-provider/package.json
+COPY packages/data-schemas/package.json ./packages/data-schemas/package.json
+COPY packages/api/package.json ./packages/api/package.json
 
-COPY --chown=node:node package.json package-lock.json ./
-COPY --chown=node:node api/package.json ./api/package.json
-COPY --chown=node:node client/package.json ./client/package.json
-COPY --chown=node:node packages/data-provider/package.json ./packages/data-provider/package.json
-COPY --chown=node:node packages/data-schemas/package.json ./packages/data-schemas/package.json
-COPY --chown=node:node packages/api/package.json ./packages/api/package.json
-COPY --chown=node:node packages/client/package.json ./packages/client/package.json
+RUN npm config set fetch-retry-maxtimeout 600000 \
+    && npm config set fetch-retries 5 \
+    && npm config set fetch-retry-mintimeout 15000 \
+    && npm ci --no-audit --legacy-peer-deps
 
-RUN \
-    # Allow mounting of these files, which have no default
-    touch .env ; \
-    # Create directories for the volumes to inherit the correct permissions
-    mkdir -p /app/client/public/images /app/api/logs /app/uploads ; \
-    npm config set fetch-retry-maxtimeout 600000 ; \
-    npm config set fetch-retries 5 ; \
-    npm config set fetch-retry-mintimeout 15000 ; \
-    npm ci --no-audit
+COPY . .
 
-COPY --chown=node:node . .
-
-# Standalone app is served at origin root, not under /HBMP_AgentBot
 ENV AGENTBOT_BASE=/
 ENV HOST=0.0.0.0
-
-# Change this to bust stale Zeabur layer cache.
-ARG HBMP_BUILD=2026-08-27-dist3
-# 3072 fits Zeabur 4GB builders; 8192 OOMs and used to continue via `;`.
+ARG HBMP_BUILD=2026-08-27-dist4
 ENV NODE_OPTIONS=--max-old-space-size=3072
 
-# Do not npm prune: it drops workspace dist and leaves a broken
-# @librechat/data-schemas symlink (Zeabur crash-loop).
+# Do not npm prune: it drops workspace dist (@librechat/data-schemas crash-loop).
 RUN set -eux; \
     echo "HBMP_BUILD=${HBMP_BUILD}"; \
     if [ -f librechat.yaml.example ] && [ ! -f librechat.yaml ]; then \
@@ -74,23 +58,16 @@ RUN set -eux; \
     cp -a packages/data-provider/dist node_modules/librechat-data-provider/dist; \
     test -f node_modules/@librechat/data-schemas/dist/index.cjs; \
     test -f node_modules/@librechat/api/dist/index.js; \
+    chown -R node:node /app; \
     npm cache clean --force
 
-# Node API setup
-# Do not pin PORT here — Zeabur injects $PORT (often 8080). Local compose still
-# passes PORT=3080. Listen on process.env.PORT in the entrypoint.
 ENV HOST=0.0.0.0
 ENV SEARCH=false
 EXPOSE 3080 8080
 
-COPY --chown=node:node scripts/docker-entrypoint.sh /app/scripts/docker-entrypoint.sh
-RUN chmod +x /app/scripts/docker-entrypoint.sh
+COPY scripts/docker-entrypoint.sh /app/scripts/docker-entrypoint.sh
+RUN chmod +x /app/scripts/docker-entrypoint.sh \
+    && chown node:node /app/scripts/docker-entrypoint.sh
 
+USER node
 CMD ["/app/scripts/docker-entrypoint.sh"]
-
-# Optional: for client with nginx routing
-# FROM nginx:stable-alpine AS nginx-client
-# WORKDIR /usr/share/nginx/html
-# COPY --from=node /app/client/dist /usr/share/nginx/html
-# COPY client/nginx.conf /etc/nginx/conf.d/default.conf
-# ENTRYPOINT ["nginx", "-g", "daemon off;"]
