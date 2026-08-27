@@ -4,7 +4,6 @@ FROM node:20-alpine AS node
 
 RUN apk add --no-cache jemalloc python3 py3-pip uv make g++ git
 ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2
-ENV PATH="/app/node_modules/.bin:${PATH}"
 
 COPY --from=ghcr.io/astral-sh/uv:0.6.13 /uv /uvx /bin/
 RUN uv --version
@@ -21,18 +20,19 @@ COPY packages/data-schemas/package.json ./packages/data-schemas/package.json
 COPY packages/api/package.json ./packages/api/package.json
 COPY packages/client/package.json ./packages/client/package.json
 
-# Zeabur injects NODE_ENV=production into the image build. That makes
-# `npm ci` skip rollup/rimraf (devDependencies) and package builds exit 127.
+# Zeabur injects NODE_ENV=production at build time; force dev tools to install.
 ENV NODE_ENV=development
 
 RUN npm config set fetch-retry-maxtimeout 600000 \
     && npm config set fetch-retries 5 \
     && npm config set fetch-retry-mintimeout 15000 \
     && NODE_ENV=development npm ci --no-audit --legacy-peer-deps --include=dev \
-    && test -x node_modules/.bin/rollup \
-    && test -x node_modules/.bin/rimraf
+    && (NODE_ENV=development npm install --no-save @rollup/rollup-linux-x64-musl \
+        || NODE_ENV=development npm install --no-save @rollup/rollup-linux-arm64-musl \
+        || true)
 
 COPY . .
+RUN chmod +x /app/scripts/docker-build-packages.sh
 
 ENV AGENTBOT_BASE=/
 ENV HOST=0.0.0.0
@@ -42,14 +42,10 @@ RUN if [ -f librechat.yaml.example ] && [ ! -f librechat.yaml ]; then \
       cp librechat.yaml.example librechat.yaml; \
     fi
 
-# Split layers so Zeabur logs show which command is missing (exit 127).
-RUN npm run build:data-provider && test -f packages/data-provider/dist/index.js
-RUN npm run build:data-schemas && test -f packages/data-schemas/dist/index.cjs
-RUN npm run build:api && test -f packages/api/dist/index.js
-RUN npm run build:client-package && test -f packages/client/dist/index.js
+# Invoke rollup via `node`, not `npm run` / rimraf (those 127 on Zeabur).
+RUN /app/scripts/docker-build-packages.sh
 RUN AGENTBOT_BASE=/ npm run build:client && test -d client/dist
 
-# Real copies, not workspace symlinks. Do not prune.
 RUN mkdir -p node_modules/@librechat \
     && rm -rf node_modules/@librechat/data-schemas node_modules/@librechat/api node_modules/librechat-data-provider \
     && mkdir -p node_modules/@librechat/data-schemas node_modules/@librechat/api node_modules/librechat-data-provider \
