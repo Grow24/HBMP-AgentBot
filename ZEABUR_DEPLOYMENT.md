@@ -1,125 +1,58 @@
-# Zeabur pe HBMP AgentBot deploy
+# Zeabur — HBMP AgentBot
 
-Repo: [Grow24/HBMP-AgentBot](https://github.com/Grow24/HBMP-AgentBot)
+Repo: https://github.com/Grow24/HBMP-AgentBot (`main`)
 
-Zeabur Docker Compose support nahi karta. **App Git se Dockerfile se banegi**, **MongoDB** alag service hogi.
+Dockerfile first line must be: `# HBMP_ZEABUR_REV=final-8080`  
+Agar Settings me `ENV PATH=...node_modules/.bin` dikhe, GitHub wala file **load nahi** hua.
 
-## 1) GitHub
+## Dashboard (ek baar)
 
-Code `main` branch pe hona chahiye: `https://github.com/Grow24/HBMP-AgentBot.git`
+1. **Settings → Dockerfile → Load from GitHub → Save**
+2. Startup Command aur CMD **khali** rakho
+3. Health Check **ON**, port **8080**, TCP
+4. Crash restart attempts **-1**
+5. Memory kam se kam **2048 Mi** (1024 se Vite/Node tight hai)
+6. Networking public domain → container port **HTTP :8080** (abhi screenshot yahi hai)
 
-## 2) Zeabur me naya project
+## Variables (hbmp-agentbot)
 
-1. [dash.zeabur.com](https://dash.zeabur.com) → **New Project**
-2. Region choose karo
-
-### A. MongoDB
-
-1. **Deploy New Service** → **Databases** → **MongoDB**
-2. Wait until running
-3. **Connections** → **Private / Internal** URI copy karo  
-   App ke liye internal URI use karo (public nahi)
-
-### B. App (Git)
-
-1. **Deploy New Service** → **GitHub**
-2. Repo: `Grow24/HBMP-AgentBot`
-3. Branch: `main`
-4. Root directory: repo root (empty / `.`)
-5. Zeabur root `Dockerfile` detect karega (Docker icon dikhega)
-
-Pehli build 10–15 min le sakti hai.
-
-## 3) Environment variables
-
-App service → **Variables**. Raw edit me ye paste karo, phir secrets replace karo.
+`PORT` **8080** hona chahiye — `3080` mat rakho (gateway 8080 pe hai).
 
 ```bash
-NODE_ENV=production
-HOST=0.0.0.0
 AGENTBOT_BASE=/
-TRUST_PROXY=1
-SEARCH=false
-ENDPOINTS=google,agents
-GOOGLE_MODELS=gemini-2.5-flash,gemini-2.5-flash-lite
-
-# Zeabur domain bind karne ke baad ye dono us URL se match hone chahiye
-DOMAIN_CLIENT=${ZEABUR_WEB_URL}
-DOMAIN_SERVER=${ZEABUR_WEB_URL}
-
-# MongoDB service ki Internal connection string + /LibreChat
-MONGO_URI=mongodb://USER:PASS@HOST:27017/LibreChat
-
-# openssl rand -hex 32  (teen alag values)
-SESSION_SECRET=
-JWT_SECRET=
-JWT_REFRESH_SECRET=
-CREDS_KEY=
-
-# openssl rand -hex 16
-CREDS_IV=
-
 ALLOW_REGISTRATION=true
 ALLOW_UNVERIFIED_EMAIL_LOGIN=true
-
-# Kam se kam ek AI key
-GOOGLE_KEY=
+CREDS_IV=1c5b0cc6e66da3e62fe5ce5b0c60a1fa
+CREDS_KEY=b04e6efa967bb144bf56e95a147806b35f3536b1909fc4fa3b4f9dcde59c75c8
+DOMAIN_CLIENT=https://hbmpagentbot.zeabur.app
+DOMAIN_SERVER=https://hbmpagentbot.zeabur.app
+EMAIL_FROM=grow24.ai.collaboration@gmail.com
+EMAIL_PASSWORD=fcetsifsklnikmch
+EMAIL_SERVICE=gmail
+EMAIL_USERNAME=grow24.ai.collaboration@gmail.com
+ENDPOINTS=google,agents
+GOOGLE_KEY=AIzaSyBP7O-jByJfYKdQHiqPtfC4QOfAzQGZI48
+GOOGLE_MODELS=gemini-2.5-flash,gemini-2.5-flash-lite
+HOST=0.0.0.0
+JWT_REFRESH_SECRET=804cda0b893aa9ad954af847bfbb831b35ae91fd724bdcf5c796af8556d8e3ce
+JWT_SECRET=d681e891b7da71441479019896248723f1dda304ed4fe2544e44cdf9f0ccfd1d
+MONGO_URI=mongodb://mongo:7S8v915ZTngDN0fc3Ux4HaqciQhAWJ62@mongodb.zeabur.internal:27017/LibreChat
+NODE_ENV=production
+PORT=8080
+SEARCH=false
+SESSION_SECRET=0be245bce9e8a5dc94f3934da027988f104fe9d0bb71861293a7410017ce0bbd
+TRUST_PROXY=1
 ```
 
-Secrets generate:
+Save → **Redeploy** (Restart nahi). Build 10–15 min.
 
-```bash
-openssl rand -hex 32
-openssl rand -hex 16
+Logs me ye dikhna chahiye:
+
+```text
+HBMP_ZEABUR_REV=final-8080 starting HOST=0.0.0.0 PORT=8080
+Connected to MongoDB
+Server listening on all interfaces at port 8080
 ```
 
-`MONGO_URI` ke end pe database name `LibreChat` lagana.
-
-`DOMAIN_CLIENT` / `DOMAIN_SERVER`: Domain tab se public URL add karo, phir `${ZEABUR_WEB_URL}` resolve ho jayega. Agar nahi ho, manually `https://your-app.zeabur.app` set karo (trailing slash mat do).
-
-## 4) Port (502 ka common cause)
-
-`PORT` variable **mat** set karo — Zeabur khud inject karta hai (aksar **8080**). App `$PORT` pe listen karti hai.
-
-`hbmp-agentbot` → **Networking** → public domain ka container port **usi `$PORT` ke barabar** ho (usually HTTP :8080).
-
-Agar `PORT=3080` rakha hai aur gateway 8080 pe hai, site **502** degi. `PORT` delete karke redeploy karo.
-
-## 5) Domain
-
-Service → **Networking / Domain** → Generate domain. Phir **Redeploy**.
-
-Health:
-
-```bash
-curl https://YOUR-APP.zeabur.app/health
-```
-
-`OK` aana chahiye.
-
-## 6) Pehla user
-
-`ALLOW_REGISTRATION=true` hai → `/register` se account banao.
-
-Ya locally (same Mongo): `npm run create-user`
-
-## Build notes
-
-- Dockerfile heap **3072 MB** hai taaki 4GB Zeabur plan pe OOM na ho
-- Build fail / OOM aaye to service RAM **8GB** karo, cache clear, redeploy
-- Settings → Dockerfile → **Load from GitHub** → Save. Dashboard me purana Dockerfile cache ho to `dist` missing rehta hai
-- Settings → Health Check port **3080** (Networking ke saath match)
-- Crash restart attempts: **-1**
-- Meilisearch optional hai (`SEARCH=false`)
-- `librechat.yaml` image start pe example se ban jati hai
-
-## Checklist
-
-- [ ] MongoDB service same project me running
-- [ ] Internal `MONGO_URI` set
-- [ ] Unique `SESSION_SECRET`, `JWT_*`, `CREDS_KEY`, `CREDS_IV`
-- [ ] `GOOGLE_KEY` set
-- [ ] Domain bind + `DOMAIN_CLIENT` / `DOMAIN_SERVER` us URL par
-- [ ] `PORT=3080` (Networking HTTP :3080 ke saath)
-- [ ] `/health` OK
-- [ ] Register + Google Gemini se chat
+Check: https://hbmpagentbot.zeabur.app/health → `OK`  
+Phir: https://hbmpagentbot.zeabur.app/register

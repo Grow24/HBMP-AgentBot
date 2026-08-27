@@ -26,6 +26,7 @@ services:
       - .env
     environment:
       - HOST=0.0.0.0
+      - PORT=3080
       - NODE_ENV=production
       - AGENTBOT_BASE=/
       - MONGO_URI=mongodb://mongodb:27017/LibreChat

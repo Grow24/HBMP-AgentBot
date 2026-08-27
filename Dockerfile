@@ -1,4 +1,5 @@
-# v0.8.1-rc1
+# HBMP_ZEABUR_REV=final-8080
+# If Zeabur Settings still shows ENV PATH=.../node_modules/.bin this file was NOT loaded from GitHub.
 
 FROM node:20-alpine AS node
 
@@ -20,7 +21,7 @@ COPY packages/data-schemas/package.json ./packages/data-schemas/package.json
 COPY packages/api/package.json ./packages/api/package.json
 COPY packages/client/package.json ./packages/client/package.json
 
-# Zeabur injects NODE_ENV=production at build time; force dev tools to install.
+# Zeabur Variables NODE_ENV=production would skip rollup/rimraf during npm ci.
 ENV NODE_ENV=development
 
 RUN npm config set fetch-retry-maxtimeout 600000 \
@@ -32,7 +33,7 @@ RUN npm config set fetch-retry-maxtimeout 600000 \
         || true)
 
 COPY . .
-RUN chmod +x /app/scripts/docker-build-packages.sh
+RUN chmod +x /app/scripts/docker-build-packages.sh /app/scripts/docker-entrypoint.sh
 
 ENV AGENTBOT_BASE=/
 ENV HOST=0.0.0.0
@@ -42,7 +43,6 @@ RUN if [ -f librechat.yaml.example ] && [ ! -f librechat.yaml ]; then \
       cp librechat.yaml.example librechat.yaml; \
     fi
 
-# Invoke rollup via `node`, not `npm run` / rimraf (those 127 on Zeabur).
 RUN /app/scripts/docker-build-packages.sh
 RUN AGENTBOT_BASE=/ npm run build:client && test -d client/dist
 
@@ -62,11 +62,7 @@ RUN mkdir -p node_modules/@librechat \
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV SEARCH=false
-EXPOSE 3080 8080
-
-COPY scripts/docker-entrypoint.sh /app/scripts/docker-entrypoint.sh
-RUN chmod +x /app/scripts/docker-entrypoint.sh \
-    && chown node:node /app/scripts/docker-entrypoint.sh
+EXPOSE 8080 3080
 
 USER node
 CMD ["/app/scripts/docker-entrypoint.sh"]
