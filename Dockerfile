@@ -1,4 +1,4 @@
-# HBMP_ZEABUR_REV=mongo-retry-keep-alive
+# HBMP_ZEABUR_REV=npm-ci-retry
 # Paste this entire file into Zeabur Settings → Dockerfile, then Save.
 # If that box still has ENV PATH=...node_modules/.bin, GitHub is ignored.
 
@@ -26,9 +26,20 @@ COPY packages/client/package.json ./packages/client/package.json
 ENV NODE_ENV=development
 
 RUN npm config set fetch-retry-maxtimeout 600000 \
-    && npm config set fetch-retries 5 \
-    && npm config set fetch-retry-mintimeout 15000 \
-    && NODE_ENV=development npm ci --no-audit --legacy-peer-deps --include=dev \
+    && npm config set fetch-retries 10 \
+    && npm config set fetch-retry-mintimeout 20000 \
+    && npm config set maxsockets 5 \
+    && ok=0 \
+    && for i in 1 2 3 4 5; do \
+         echo "HBMP_ZEABUR_REV=npm-ci-retry npm ci attempt $i"; \
+         if NODE_ENV=development npm ci --no-audit --legacy-peer-deps --include=dev; then ok=1; break; fi; \
+         echo "npm ci attempt $i failed, retrying in 20s"; \
+         sleep 20; \
+       done \
+    && if [ "$ok" != 1 ]; then \
+         echo "npm ci failed after retries, falling back to npm install"; \
+         NODE_ENV=development npm install --no-audit --legacy-peer-deps --include=dev; \
+       fi \
     && (NODE_ENV=development npm install --no-save @rollup/rollup-linux-x64-musl \
         || NODE_ENV=development npm install --no-save @rollup/rollup-linux-arm64-musl \
         || true)
