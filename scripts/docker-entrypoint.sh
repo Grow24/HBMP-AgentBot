@@ -49,6 +49,13 @@ fi
 export NODE_ENV="${NODE_ENV:-production}"
 export AGENTBOT_BASE="${AGENTBOT_BASE:-/}"
 
-echo "HBMP_ZEABUR_REV=final-8080-listen starting HOST=${HOST} PORT=${PORT}"
+# Zeabur Mongo root user lives in admin; /LibreChat without authSource fails auth.
+if [ -n "${MONGO_URI:-}" ] && echo "$MONGO_URI" | grep -q '@' && ! echo "$MONGO_URI" | grep -qi 'authSource='; then
+  case "$MONGO_URI" in
+    *\?*) export MONGO_URI="${MONGO_URI}&authSource=admin" ;;
+    *) export MONGO_URI="${MONGO_URI}?authSource=admin" ;;
+  esac
+  echo "Appended authSource=admin to MONGO_URI"
+fi
 
 exec node api/server/index.js

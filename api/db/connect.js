@@ -3,7 +3,15 @@ const { isEnabled } = require('@librechat/api');
 const { logger } = require('@librechat/data-schemas');
 
 const mongoose = require('mongoose');
-const MONGO_URI = process.env.MONGO_URI;
+
+function withAdminAuthSource(uri) {
+  if (!uri || !uri.includes('@') || /[?&]authSource=/i.test(uri)) {
+    return uri;
+  }
+  return uri.includes('?') ? `${uri}&authSource=admin` : `${uri}?authSource=admin`;
+}
+
+const MONGO_URI = withAdminAuthSource(process.env.MONGO_URI);
 
 if (!MONGO_URI) {
   throw new Error('Please define the MONGO_URI environment variable');
@@ -65,6 +73,9 @@ async function connectDb() {
     };
     logger.info('Mongo Connection options');
     logger.info(JSON.stringify(opts, null, 2));
+    logger.info(
+      `Mongo URI authSource=${/[?&]authSource=([^&]+)/i.exec(MONGO_URI)?.[1] || 'default'}`,
+    );
     mongoose.set('strictQuery', true);
     cached.promise = mongoose.connect(MONGO_URI, opts).then((mongoose) => {
       return mongoose;
