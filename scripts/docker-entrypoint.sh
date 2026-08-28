@@ -40,11 +40,15 @@ fi
 # Start node directly — `npm run backend` needs `cross-env`, which is pruned
 # from production images and would crash the container (Zeabur 502).
 export HOST="${HOST:-0.0.0.0}"
-# Zeabur public + health check are 8080. Local compose sets PORT=3080.
-export PORT="${PORT:-8080}"
+# Zeabur injects ZEABUR_WEB_URL. Always bind 8080 (health check + public map).
+if [ -n "${ZEABUR_WEB_URL:-}" ] || [ -n "${ZEABUR_PROJECT_ID:-}" ]; then
+  export PORT=8080
+else
+  export PORT="${PORT:-8080}"
+fi
 export NODE_ENV="${NODE_ENV:-production}"
 export AGENTBOT_BASE="${AGENTBOT_BASE:-/}"
 
-echo "HBMP_ZEABUR_REV=final-8080 starting HOST=${HOST} PORT=${PORT}"
+echo "HBMP_ZEABUR_REV=final-8080-listen starting HOST=${HOST} PORT=${PORT}"
 
 exec node api/server/index.js
