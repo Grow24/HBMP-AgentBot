@@ -18,11 +18,54 @@ function sanitizeMongoUri(uri) {
   return cleaned.includes('?') ? `${cleaned}&authSource=admin` : `${cleaned}?authSource=admin`;
 }
 
-const MONGO_URI = sanitizeMongoUri(process.env.MONGO_URI);
-
-if (!MONGO_URI) {
-  throw new Error('Please define the MONGO_URI environment variable');
+function redactMongoUri(uri) {
+  return String(uri || '').replace(/:([^@/]+)@/, ':***@');
 }
+
+function stripCredentials(uri) {
+  return String(uri)
+    .replace(/mongodb(\+srv)?:\/\/[^@]+@/, 'mongodb$1://')
+    .replace(/[?&]authSource=[^&]*/gi, '')
+    .replace(/\?&/, '?')
+    .replace(/[?&]$/, '');
+}
+
+function isOnZeabur() {
+  return Boolean(
+    process.env.ZEABUR_WEB_URL || process.env.ZEABUR_PROJECT_ID || process.env.ZEABUR_SERVICE_ID,
+  );
+}
+
+function composeFromMongoCreds() {
+  const user = process.env.MONGO_USERNAME || process.env.MONGO_INITDB_ROOT_USERNAME;
+  const pass = process.env.MONGO_PASSWORD || process.env.MONGO_INITDB_ROOT_PASSWORD;
+  if (!user || !pass) {
+    return null;
+  }
+  const host = process.env.MONGO_HOST || (isOnZeabur() ? 'mongodb.zeabur.internal' : '127.0.0.1');
+  const port = process.env.MONGO_PORT || '27017';
+  return `mongodb://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${host}:${port}/LibreChat?authSource=admin`;
+}
+
+function collectMongoUris() {
+  const uris = [];
+  const composed = composeFromMongoCreds();
+  const fromEnv = sanitizeMongoUri(process.env.MONGO_URI);
+  // Prefer live Zeabur username/password over a stale pasted MONGO_URI.
+  if (composed) {
+    uris.push(composed);
+  }
+  if (fromEnv && fromEnv !== composed && !/\$\{/.test(fromEnv)) {
+    uris.push(fromEnv);
+  }
+  for (const uri of [...uris]) {
+    if (uri.includes('@')) {
+      uris.push(stripCredentials(uri));
+    }
+  }
+  return [...new Set(uris.filter(Boolean))];
+}
+
 /** The maximum number of connections in the connection pool. */
 const maxPoolSize = parseInt(process.env.MONGO_MAX_POOL_SIZE) || undefined;
 /** The minimum number of connections in the connection pool. */
@@ -55,42 +98,73 @@ if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
+function mongoConnectOptions() {
+  return {
+    bufferCommands: false,
+    serverSelectionTimeoutMS: parseInt(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS) || 15000,
+    ...(maxPoolSize ? { maxPoolSize } : {}),
+    ...(minPoolSize ? { minPoolSize } : {}),
+    ...(maxConnecting ? { maxConnecting } : {}),
+    ...(maxIdleTimeMS ? { maxIdleTimeMS } : {}),
+    ...(waitQueueTimeoutMS ? { waitQueueTimeoutMS } : {}),
+    ...(autoIndex != undefined ? { autoIndex } : {}),
+    ...(autoCreate != undefined ? { autoCreate } : {}),
+  };
+}
+
+async function connectOnce(uri, opts) {
+  try {
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+  } catch {
+    // ignore leftover state between URI attempts
+  }
+  return mongoose.connect(uri, opts);
+}
+
 async function connectDb() {
   if (cached.conn && cached.conn?._readyState === 1) {
     return cached.conn;
   }
 
+  const uris = collectMongoUris();
+  if (uris.length === 0) {
+    throw new Error(
+      'Please define MONGO_URI, or set MONGO_USERNAME and MONGO_PASSWORD (Zeabur Mongo expose)',
+    );
+  }
+
   const disconnected = cached.conn && cached.conn?._readyState !== 1;
   if (!cached.promise || disconnected) {
-    const opts = {
-      bufferCommands: false,
-      serverSelectionTimeoutMS: parseInt(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS) || 15000,
-      ...(maxPoolSize ? { maxPoolSize } : {}),
-      ...(minPoolSize ? { minPoolSize } : {}),
-      ...(maxConnecting ? { maxConnecting } : {}),
-      ...(maxIdleTimeMS ? { maxIdleTimeMS } : {}),
-      ...(waitQueueTimeoutMS ? { waitQueueTimeoutMS } : {}),
-      ...(autoIndex != undefined ? { autoIndex } : {}),
-      ...(autoCreate != undefined ? { autoCreate } : {}),
-      // useNewUrlParser: true,
-      // useUnifiedTopology: true,
-      // bufferMaxEntries: 0,
-      // useFindAndModify: true,
-      // useCreateIndex: true
-    };
+    const opts = mongoConnectOptions();
+    mongoose.set('strictQuery', true);
     logger.info('Mongo Connection options');
     logger.info(JSON.stringify(opts, null, 2));
-    logger.info(
-      `Mongo URI authSource=${/[?&]authSource=([^&]+)/i.exec(MONGO_URI)?.[1] || 'default'}`,
-    );
-    mongoose.set('strictQuery', true);
-    cached.promise = mongoose.connect(MONGO_URI, opts).then((mongoose) => {
-      return mongoose;
-    });
-  }
-  cached.conn = await cached.promise;
 
-  return cached.conn;
+    cached.promise = (async () => {
+      let lastError;
+      for (const uri of uris) {
+        logger.info(`Mongo connecting ${redactMongoUri(uri)}`);
+        try {
+          return await connectOnce(uri, opts);
+        } catch (err) {
+          lastError = err;
+          logger.error(`Mongo connect failed (${redactMongoUri(uri)}): ${err.message}`);
+        }
+      }
+      throw lastError;
+    })();
+  }
+
+  try {
+    cached.conn = await cached.promise;
+    return cached.conn;
+  } catch (err) {
+    cached.promise = null;
+    cached.conn = null;
+    throw err;
+  }
 }
 
 module.exports = {

@@ -55,6 +55,14 @@ while echo "${MONGO_URI:-}" | grep -q '^MONGO_URI='; do
   echo "Stripped duplicate MONGO_URI= prefix"
 done
 
+# Prefer exposed Mongo service creds over a mistyped pasted URI.
+if [ -n "${MONGO_USERNAME:-}" ] && [ -n "${MONGO_PASSWORD:-}" ]; then
+  host="${MONGO_HOST:-mongodb.zeabur.internal}"
+  port="${MONGO_PORT:-27017}"
+  export MONGO_URI="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${host}:${port}/LibreChat?authSource=admin"
+  echo "Built MONGO_URI from MONGO_USERNAME/MONGO_PASSWORD host=${host}"
+fi
+
 # Zeabur Mongo root user lives in admin; /LibreChat without authSource fails auth.
 if [ -n "${MONGO_URI:-}" ] && echo "$MONGO_URI" | grep -q '@' && ! echo "$MONGO_URI" | grep -qi 'authSource='; then
   case "$MONGO_URI" in
@@ -64,6 +72,6 @@ if [ -n "${MONGO_URI:-}" ] && echo "$MONGO_URI" | grep -q '@' && ! echo "$MONGO_
   echo "Appended authSource=admin to MONGO_URI"
 fi
 
-echo "HBMP_ZEABUR_REV=final-8080-listen starting HOST=${HOST} PORT=${PORT}"
+echo "HBMP_ZEABUR_REV=mongo-retry-keep-alive starting HOST=${HOST} PORT=${PORT}"
 
 exec node api/server/index.js

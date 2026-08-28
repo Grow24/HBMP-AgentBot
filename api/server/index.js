@@ -68,9 +68,17 @@ const startServer = async () => {
     server.on('error', reject);
   });
 
-  await connectDb();
-
-  logger.info('Connected to MongoDB');
+  // Keep 8080 open for Zeabur probes. Auth/password mistakes must not kill the listener.
+  for (;;) {
+    try {
+      await connectDb();
+      logger.info('Connected to MongoDB');
+      break;
+    } catch (err) {
+      logger.error(`MongoDB not ready (${err.message}). Retrying in 5s so health checks stay up.`);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+  }
   indexSync().catch((err) => {
     logger.error('[indexSync] Background sync failed:', err);
   });
