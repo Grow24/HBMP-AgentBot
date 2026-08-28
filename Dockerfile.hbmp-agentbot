@@ -22,7 +22,6 @@ COPY packages/data-schemas/package.json ./packages/data-schemas/package.json
 COPY packages/api/package.json ./packages/api/package.json
 COPY packages/client/package.json ./packages/client/package.json
 
-# Zeabur Variables NODE_ENV=production would skip rollup/rimraf during npm ci.
 ENV NODE_ENV=development
 
 RUN npm config set fetch-retry-maxtimeout 600000 \

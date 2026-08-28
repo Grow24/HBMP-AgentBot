@@ -1,22 +1,38 @@
-# Zeabur — HBMP AgentBot
+# Zeabur — one-time fix
 
-Repo: https://github.com/Grow24/HBMP-AgentBot (`main`)
+GitHub pushes **tab tab nahi** chalte jab tak Settings → Dockerfile box me **purani file** padi hai.
 
-Dockerfile first line must be: `# HBMP_ZEABUR_REV=final-8080`  
-Agar Settings me `ENV PATH=...node_modules/.bin` dikhe, GitHub wala file **load nahi** hua.
+Aapke screenshot me abhi bhi ye line hai:
 
-## Dashboard (ek baar)
+```dockerfile
+ENV PATH="/app/node_modules/.bin:${PATH}"
+```
 
-1. **Settings → Dockerfile → Load from GitHub → Save**
-2. Startup Command aur CMD **khali** rakho
-3. Health Check **ON**, port **8080**, TCP
-4. Crash restart attempts **-1**
-5. Memory kam se kam **2048 Mi** (1024 se Vite/Node tight hai)
-6. Networking public domain → container port **HTTP :8080** (abhi screenshot yahi hai)
+Yahi **exit 127** karti hai (`npm` / `rollup` PATH toot jata hai). GitHub wali file me ye line **nahi** hai.
 
-## Variables (hbmp-agentbot)
+## 1) Dockerfile box replace karo (sabse zaroori)
 
-`PORT` **8080** hona chahiye — `3080` mat rakho (gateway 8080 pe hai).
+`hbmp-agentbot` → **Settings** → **Dockerfile**
+
+1. **Load from GitHub** dabao  
+   **YA** poori box select karke delete karo aur [Dockerfile.hbmp-agentbot](https://github.com/Grow24/HBMP-AgentBot/blob/main/Dockerfile.hbmp-agentbot) paste karo
+2. Pehli line ye honi chahiye: `# HBMP_ZEABUR_REV=final-8080`
+3. `ENV PATH=...node_modules/.bin` **nahi** hona chahiye
+4. Purple **Save** dabao (Load ke baad Save ke bina purani file hi build hoti hai)
+
+## 2) Settings
+
+- Startup Command: **khali**
+- CMD: **khali**
+- Health Check: **8080** TCP
+- Crash restarts: **-1**
+- Memory: **2048** (1024 se build/runtime tight)
+
+`mongodb` → Settings → Startup Command **`sh` hatao** (khali rakho). `sh` Mongo ke real entrypoint ko override karta hai.
+
+## 3) Variables — `PORT` 8080 karo
+
+Networking 8080 hai, `PORT=3080` 502 deta hai.
 
 ```bash
 AGENTBOT_BASE=/
@@ -42,11 +58,14 @@ PORT=8080
 SEARCH=false
 SESSION_SECRET=0be245bce9e8a5dc94f3934da027988f104fe9d0bb71861293a7410017ce0bbd
 TRUST_PROXY=1
+ZBPACK_DOCKERFILE_PATH=Dockerfile.hbmp-agentbot
 ```
 
-Save → **Redeploy** (Restart nahi). Build 10–15 min.
+## 4) Redeploy
 
-Logs me ye dikhna chahiye:
+Overview → **Redeploy** (Restart nahi). Suspended ho to pehle unsuspend.
+
+Logs me ye aana chahiye:
 
 ```text
 HBMP_ZEABUR_REV=final-8080 starting HOST=0.0.0.0 PORT=8080
@@ -54,5 +73,6 @@ Connected to MongoDB
 Server listening on all interfaces at port 8080
 ```
 
-Check: https://hbmpagentbot.zeabur.app/health → `OK`  
-Phir: https://hbmpagentbot.zeabur.app/register
+Agar log me phir `npm run build:data-provider && test -f` dikhe, Dockerfile **Save nahi** hua.
+
+https://hbmpagentbot.zeabur.app/health → `OK`
