@@ -4,14 +4,21 @@ const { logger } = require('@librechat/data-schemas');
 
 const mongoose = require('mongoose');
 
-function withAdminAuthSource(uri) {
-  if (!uri || !uri.includes('@') || /[?&]authSource=/i.test(uri)) {
+function sanitizeMongoUri(uri) {
+  if (!uri) {
     return uri;
   }
-  return uri.includes('?') ? `${uri}&authSource=admin` : `${uri}?authSource=admin`;
+  let cleaned = String(uri).trim().replace(/^["']|["']$/g, '');
+  while (/^MONGO_URI=/i.test(cleaned)) {
+    cleaned = cleaned.replace(/^MONGO_URI=/i, '').trim();
+  }
+  if (!cleaned.includes('@') || /[?&]authSource=/i.test(cleaned)) {
+    return cleaned;
+  }
+  return cleaned.includes('?') ? `${cleaned}&authSource=admin` : `${cleaned}?authSource=admin`;
 }
 
-const MONGO_URI = withAdminAuthSource(process.env.MONGO_URI);
+const MONGO_URI = sanitizeMongoUri(process.env.MONGO_URI);
 
 if (!MONGO_URI) {
   throw new Error('Please define the MONGO_URI environment variable');

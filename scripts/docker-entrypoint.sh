@@ -49,6 +49,12 @@ fi
 export NODE_ENV="${NODE_ENV:-production}"
 export AGENTBOT_BASE="${AGENTBOT_BASE:-/}"
 
+# Users sometimes paste MONGO_URI=mongodb://... into the value field.
+while echo "${MONGO_URI:-}" | grep -q '^MONGO_URI='; do
+  export MONGO_URI="${MONGO_URI#MONGO_URI=}"
+  echo "Stripped duplicate MONGO_URI= prefix"
+done
+
 # Zeabur Mongo root user lives in admin; /LibreChat without authSource fails auth.
 if [ -n "${MONGO_URI:-}" ] && echo "$MONGO_URI" | grep -q '@' && ! echo "$MONGO_URI" | grep -qi 'authSource='; then
   case "$MONGO_URI" in
@@ -57,5 +63,7 @@ if [ -n "${MONGO_URI:-}" ] && echo "$MONGO_URI" | grep -q '@' && ! echo "$MONGO_
   esac
   echo "Appended authSource=admin to MONGO_URI"
 fi
+
+echo "HBMP_ZEABUR_REV=final-8080-listen starting HOST=${HOST} PORT=${PORT}"
 
 exec node api/server/index.js
