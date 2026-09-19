@@ -32,7 +32,7 @@ export default function WelcomeModal({ welcomeMessage }: WelcomeModalProps) {
   const steps = [
     'Click on "My Agents" in the left sidebar',
     'Select "Google" as your provider',
-    'Choose "gemini-2.5-flash" model',
+    'Choose "gemini-3.6-flash" model',
     'Start your conversation!'
   ];
 

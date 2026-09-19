@@ -1,7 +1,7 @@
 const { google } = require('googleapis');
 const { sleep } = require('@librechat/agents');
 const { logger } = require('@librechat/data-schemas');
-const { getModelMaxTokens } = require('@librechat/api');
+const { getModelMaxTokens, isGemini3Model, resolveGoogleModel } = require('@librechat/api');
 const { concat } = require('@langchain/core/utils/stream');
 const { ChatVertexAI } = require('@langchain/google-vertexai');
 const { Tokenizer, getSafetySettings } = require('@librechat/api');
@@ -137,6 +137,15 @@ class GoogleClient extends BaseClient {
     }
 
     this.modelOptions = this.options.modelOptions || {};
+    if (this.modelOptions.model && !this.project_id) {
+      const requestedModel = this.modelOptions.model;
+      this.modelOptions.model = resolveGoogleModel(requestedModel);
+      if (this.modelOptions.model !== requestedModel) {
+        logger.warn(
+          `[Google] Remapped retired model ${requestedModel} -> ${this.modelOptions.model}`,
+        );
+      }
+    }
 
     this.options.attachments?.then((attachments) => this.checkVisionRequest(attachments));
 
@@ -166,13 +175,15 @@ class GoogleClient extends BaseClient {
       );
     }
 
-    // Add thinking configuration
-    this.modelOptions.thinkingConfig = {
-      thinkingBudget:
-        (this.modelOptions.thinking ?? googleSettings.thinking.default)
-          ? this.modelOptions.thinkingBudget
-          : 0,
-    };
+    // Gemini 3 thought streams break @google/generative-ai 0.24 ("Failed to parse stream")
+    if (!isGemini3Model(this.modelOptions.model)) {
+      this.modelOptions.thinkingConfig = {
+        thinkingBudget:
+          (this.modelOptions.thinking ?? googleSettings.thinking.default)
+            ? this.modelOptions.thinkingBudget
+            : 0,
+      };
+    }
     delete this.modelOptions.thinking;
     delete this.modelOptions.thinkingBudget;
 
@@ -700,7 +711,15 @@ class GoogleClient extends BaseClient {
           usageMetadata = !usageMetadata
             ? chunk?.usageMetadata
             : Object.assign(usageMetadata, chunk?.usageMetadata);
-          const chunkText = chunk.text();
+          let chunkText = '';
+          try {
+            chunkText = chunk.text();
+          } catch {
+            // Thought-signature-only chunks have no text parts
+          }
+          if (!chunkText) {
+            continue;
+          }
           await this.generateTextStream(chunkText, onProgress, {
             delay,
           });

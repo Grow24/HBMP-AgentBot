@@ -4,6 +4,7 @@ import type { GoogleClientOptions, VertexAIClientOptions } from '@librechat/agen
 import type { GoogleAIToolType } from '@langchain/google-common';
 import type * as t from '~/types';
 import { isEnabled } from '~/utils';
+import { resolveGoogleModel, shouldEnableGoogleThoughtStreaming } from './models';
 
 /** Known Google/Vertex AI parameters that map directly to the client config */
 export const knownGoogleParams = new Set([
@@ -156,7 +157,7 @@ export function getGoogleConfig(
 
   const llmConfig: GoogleClientOptions | VertexAIClientOptions = removeNullishValues({
     ...(modelOptions || {}),
-    model: modelOptions?.model ?? '',
+    model: project_id ? (modelOptions?.model ?? '') : resolveGoogleModel(modelOptions?.model),
     maxRetries: 2,
     topP: modelOptions?.topP ?? undefined,
     topK: modelOptions?.topK ?? undefined,
@@ -191,7 +192,10 @@ export function getGoogleConfig(
   }
 
   const shouldEnableThinking =
-    thinking && thinkingBudget != null && (thinkingBudget > 0 || thinkingBudget === -1);
+    thinking &&
+    thinkingBudget != null &&
+    (thinkingBudget > 0 || thinkingBudget === -1) &&
+    shouldEnableGoogleThoughtStreaming(llmConfig.model);
 
   if (shouldEnableThinking && provider === Providers.GOOGLE) {
     (llmConfig as GoogleClientOptions).thinkingConfig = {

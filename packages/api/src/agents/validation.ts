@@ -1,7 +1,8 @@
 import { z } from 'zod';
-import { ViolationTypes, ErrorTypes } from 'librechat-data-provider';
+import { ViolationTypes, ErrorTypes, EModelEndpoint } from 'librechat-data-provider';
 import type { Agent, TModelsConfig } from 'librechat-data-provider';
 import type { Request, Response } from 'express';
+import { isGoogleModelAllowed } from '~/endpoints/google/models';
 
 /** Avatar schema shared between create and update */
 export const agentAvatarSchema = z.object({
@@ -152,7 +153,9 @@ export async function validateAgentModel(
     };
   }
 
-  const validModel = !!availableModels.find((availableModel) => availableModel === model);
+  const validModel =
+    !!availableModels.find((availableModel) => availableModel === model) ||
+    (endpoint === EModelEndpoint.google && isGoogleModelAllowed(model, availableModels));
 
   if (validModel) {
     return { isValid: true };

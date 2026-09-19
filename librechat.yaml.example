@@ -31,17 +31,18 @@ endpoints:
     disabled: true
 
   google:
-    # Default models for Google endpoint - Gemini 2.5 Flash as primary
+    # Default models for Google endpoint - Gemini 3.6 Flash as primary
+    # (Gemini 2.5 is blocked for new API projects)
     models:
       default:
-        - 'gemini-2.5-flash'
-        - 'gemini-2.5-flash-lite'
-        - 'gemini-2.0-flash'
-        - 'gemini-1.5-pro'
+        - 'gemini-3.6-flash'
+        - 'gemini-3.8-flash'
+        - 'gemini-3.5-flash'
+        - 'gemini-3.5-flash-lite'
     titleConvo: true
-    titleModel: 'gemini-2.5-flash'
+    titleModel: 'gemini-3.6-flash'
     summarize: true
-    summaryModel: 'gemini-2.5-flash'
+    summaryModel: 'gemini-3.6-flash'
     modelDisplayLabel: 'Google Gemini'
 
   # Agents endpoint - uses Google Gemini as the default provider
@@ -49,8 +50,8 @@ endpoints:
     disableBuilder: false
     modelOptions:
       endpoint: 'google'
-      model: 'gemini-2.5-flash'
+      model: 'gemini-3.6-flash'
     capabilities: ['execute_code', 'file_search', 'web_search', 'actions', 'artifacts']
     searchModels:
-      - 'gemini-2.5-flash'
-      - 'gemini-2.5-flash-lite'
+      - 'gemini-3.6-flash'
+      - 'gemini-3.5-flash-lite'

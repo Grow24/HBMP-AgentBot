@@ -8,7 +8,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
         const endpoint = 'Gemini (Custom)';
         const options = {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
           },
           customParams: {
             defaultParamsEndpoint: 'google',
@@ -23,7 +23,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
 
         expect(result.tools).toEqual([{ googleSearch: {} }]);
         expect(result.llmConfig).toMatchObject({
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-3.6-flash',
         });
       });
 
@@ -32,7 +32,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
         const endpoint = 'Gemini (Custom)';
         const options = {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
             web_search: true, // Should be overridden by addParams
           },
           customParams: {
@@ -54,7 +54,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
         const endpoint = 'Gemini (Custom)';
         const options = {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
             web_search: true,
           },
           customParams: {
@@ -74,7 +74,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
         const endpoint = 'Gemini (Custom)';
         const options = {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
           },
           customParams: {
             defaultParamsEndpoint: 'google',
@@ -105,7 +105,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
         const endpoint = 'Gemini (Custom)';
         const options = {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
           },
           customParams: {
             defaultParamsEndpoint: 'google',
@@ -122,7 +122,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
         const result = getOpenAIConfig(apiKey, options, endpoint);
 
         expect(result.llmConfig).toMatchObject({
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-3.6-flash',
           temperature: 0.9, // Shared params at top level
           topP: 0.95,
         });
@@ -138,7 +138,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
         const endpoint = 'Gemini (Custom)';
         const options = {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
             temperature: 0.7,
             topK: 40,
             topP: 0.9,
@@ -162,7 +162,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
         const endpoint = 'Gemini (Custom)';
         const options = {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
             topK: 30, // Will be dropped
           },
           customParams: {
@@ -181,7 +181,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
 
         expect(result.tools).toEqual([{ googleSearch: {} }]);
         expect(result.llmConfig).toMatchObject({
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-3.6-flash',
           temperature: 0.8,
         });
         expect(result.llmConfig.modelKwargs).toMatchObject({
@@ -198,7 +198,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
         const apiKey = JSON.stringify({ GOOGLE_API_KEY: 'test-google-key' });
         const result = getOpenAIConfig(apiKey, {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
           },
           customParams: {
             defaultParamsEndpoint: 'google',
@@ -218,7 +218,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
         const apiKey = JSON.stringify({ GOOGLE_API_KEY: 'test-google-key' });
         const result = getOpenAIConfig(apiKey, {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
             temperature: 0.9,
           },
           customParams: {
@@ -240,7 +240,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
 
         const result = getOpenAIConfig(apiKey, {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
           },
           customParams: {
             defaultParamsEndpoint: 'google',
@@ -265,7 +265,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
 
         const result = getOpenAIConfig(apiKey, {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
           },
           customParams: {
             defaultParamsEndpoint: 'google',
@@ -282,7 +282,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
 
         const result = getOpenAIConfig(apiKey, {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
           },
           customParams: {
             defaultParamsEndpoint: 'google',
@@ -302,7 +302,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
 
         const result = getOpenAIConfig(apiKey, {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
           },
           customParams: {
             defaultParamsEndpoint: 'google',
@@ -326,7 +326,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
 
         const result = getOpenAIConfig(apiKey, {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
             temperature: 0.9,
           },
           customParams: {
@@ -353,7 +353,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
 
         const result = getOpenAIConfig(apiKey, {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
             temperature: 0.8,
           },
           customParams: {
@@ -371,7 +371,7 @@ describe('getOpenAIConfig - Google Compatibility', () => {
 
         const result = getOpenAIConfig(apiKey, {
           modelOptions: {
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-3.6-flash',
             temperature: 0.8,
           },
           customParams: {

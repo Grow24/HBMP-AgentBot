@@ -1,5 +1,5 @@
-const { handleError } = require('@librechat/api');
-const { ViolationTypes } = require('librechat-data-provider');
+const { handleError, isGoogleModelAllowed } = require('@librechat/api');
+const { ViolationTypes, EModelEndpoint } = require('librechat-data-provider');
 const { getModelsConfig } = require('~/server/controllers/ModelController');
 const { logViolation } = require('~/cache');
 /**
@@ -28,6 +28,9 @@ const validateModel = async (req, res, next) => {
   }
 
   let validModel = !!availableModels.find((availableModel) => availableModel === model);
+  if (!validModel && endpoint === EModelEndpoint.google) {
+    validModel = isGoogleModelAllowed(model, availableModels);
+  }
 
   if (validModel) {
     return next();
