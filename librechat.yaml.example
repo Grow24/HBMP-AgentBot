@@ -24,11 +24,21 @@ interface:
 
 # Endpoints configuration
 endpoints:
-  # Disable other endpoints to make Google the only option
-  openAI:
-    disabled: true
   anthropic:
     disabled: true
+
+  openAI:
+    titleConvo: true
+    titleModel: 'gpt-4o-mini'
+    summarize: true
+    summaryModel: 'gpt-4o-mini'
+    models:
+      default:
+        - 'gpt-4o-mini'
+        - 'gpt-4o'
+        - 'gpt-4.1-mini'
+        - 'gpt-4.1'
+    modelDisplayLabel: 'OpenAI'
 
   google:
     # Default models for Google endpoint - Gemini 3.6 Flash as primary
@@ -45,13 +55,13 @@ endpoints:
     summaryModel: 'gemini-3.6-flash'
     modelDisplayLabel: 'Google Gemini'
 
-  # Agents endpoint - uses Google Gemini as the default provider
+  # Agents endpoint - uses OpenAI as the default provider
   agents:
     disableBuilder: false
     modelOptions:
-      endpoint: 'google'
-      model: 'gemini-3.6-flash'
+      endpoint: 'openAI'
+      model: 'gpt-4o-mini'
     capabilities: ['execute_code', 'file_search', 'web_search', 'actions', 'artifacts']
     searchModels:
-      - 'gemini-3.6-flash'
-      - 'gemini-3.5-flash-lite'
+      - 'gpt-4o-mini'
+      - 'gpt-4.1-mini'
